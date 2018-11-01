@@ -1,0 +1,87 @@
+{# @var craft \craft\web\twig\variables\CraftVariable #}
+{#
+/**
+ * EmailEditor plugin for Craft CMS 3.x
+ *
+ * EmailEditor index.twig
+ *
+ * @author    Kurious Agency
+ * @copyright Copyright (c) 2018 Kurious Agency
+ * @link      kurious.agency
+ * @package   EmailEditor
+ * @since     1.0.0
+ */
+#}
+{% extends '_layouts/cp' %}
+{% import "_includes/forms" as forms %}
+{% set selectedSubnavItem = 'settings' %}
+{% set title = (email.id|length) ? "Edit Settings | "~email.title : "Add New" %}
+{% set crumbs = [
+    { label: "Settings", url: url('email-editor/settings') }, 
+] %}
+
+{% block content %}
+<h2>{{ (email.id|length) ? "Edit" : "Add New" }}</h2>
+<form method="POST">
+    {{ csrfInput() }}
+    {{ redirectInput('email-editor/settings') }}
+    {{ forms.hidden({
+    name: 'action',
+    value: 'email-editor/email/save' })
+    }}
+    {# EMAIL ID -HIDDEN #}
+    {{ forms.hidden({
+    label: 'Email ID',
+    id: 'emailId',
+    name: 'emailId',
+    value: email.id ?? '' })
+    }}
+    {# EMAIL TITLE #}
+    {{ forms.textField({
+    label: 'Email Title',
+    instructions: 'Add email name',
+    id: 'title',
+    name: 'title',
+    value: email.title ?? '',
+    require: true, })
+    }}
+    {# EMAIL SUBJECT #}
+    {{ forms.textField({
+    label: 'Email Subject',
+    instructions: 'Add email subject',
+    id: 'subject',
+    name: 'subject',
+    value: email.subject ?? '',
+    require: true, })
+    }}
+    {# EMAIL ENABLED? #}
+    {{ forms.lightswitchField({
+    label: 'Enable Email',
+    instructions: 'Is this email active?',
+    id: 'enabled',
+    name: 'enabled',
+    on: email.enabled  })
+    }}
+    {{ forms.hidden({
+    label: 'Email Type',
+    id: 'emailType',
+    name: 'emailType',
+    value: email.emailType|length ? email.emailType : 'Custom',
+    readonly: true })
+    }}
+    {# EMAIL TEMPLATE #}
+    {{ forms.textField({
+    label: 'Email Template',
+    id: 'template',
+    name: 'template',
+    value: email.template|length ? email.template : '_email/custom' })
+    }}
+    {# {% include "_includes/fieldlayoutdesigner" with {
+    fieldLayout: craft.app.fields.getLayoutByType('kuriousagency\\emaileditor\\elements\\Email')
+    } only %} #}
+        <div class="buttons">
+        <input type="submit" value="Save" class="btn submit add icon">
+    </div>
+</form>
+
+{% endblock %}

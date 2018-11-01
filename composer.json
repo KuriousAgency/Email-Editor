@@ -1,0 +1,43 @@
+{
+    "name": "kuriousagency/email-editor",
+    "description": "Edit emails",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "emaileditor"
+    ],
+    "support": {
+        "docs": "???",
+        "issues": "???"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kurious Agency",
+            "homepage": "kurious.agency"
+        }
+    ],
+    "require": {
+        "craftcms/cms": "^3.0.0-RC1"
+    },
+    "autoload": {
+        "psr-4": {
+          "kuriousagency\\emaileditor\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "EmailEditor",
+        "handle": "email-editor",
+        "hasCpSettings": true,
+        "hasCpSection": true,
+        "changelogUrl": "???",
+        "components": {
+            "emails": "kuriousagency\\emaileditor\\services\\Emails"
+        },
+        "class": "kuriousagency\\emaileditor\\EmailEditor"
+    }
+}

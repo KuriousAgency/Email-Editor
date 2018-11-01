@@ -1,0 +1,67 @@
+{# @var craft \craft\web\twig\variables\CraftVariable #}
+{#
+/**
+ * EmailEditor plugin for Craft CMS 3.x
+ *
+ * EmailEditor index.twig
+ *
+ * @author    Kurious Agency
+ * @copyright Copyright (c) 2018 Kurious Agency
+ * @link      kurious.agency
+ * @package   EmailEditor
+ * @since     1.0.0
+ */
+#}
+{% extends '_layouts/cp' %}
+{% import "_includes/forms" as forms %}
+{% set title = "Edit Content | "~email.title %}
+{% set selectedSubnavItem = 'emails' %}
+
+{% set crumbs = [
+    { label: "Emails", url: url('email-editor/index') }, 
+] %}
+
+{% block content %}
+<h2>{{ (email.id|length) ? "Edit" : "Add New" }}</h2>
+<form method="POST">
+    {{ csrfInput() }}
+    {{ redirectInput('email-editor') }}
+    {{ forms.hidden({
+    name: 'action',
+    value: 'email-editor/email/save' })
+    }}
+    {# EMAIL ID -HIDDEN #}
+    {{ forms.hidden({
+    label: 'Email ID',
+    id: 'emailId',
+    name: 'emailId',
+    value: email.id ?? '' })
+    }}
+    {# EMAIL TITLE #}
+    {{ forms.textField({
+    label: 'Email Title',
+    instructions: 'Add email title',
+    id: 'title',
+    name: 'title',
+    value: email.title ?? '',
+    require: true, })
+    }}
+    {# EMAIL SUBJECT #}
+    {{ forms.textField({
+    label: 'Email Subject',
+    instructions: 'Add email subject',
+    id: 'subject',
+    name: 'subject',
+    value: email.subject ?? '',
+    require: true, })
+    }}
+   
+    {% include "_includes/fields" with {
+        fields: email.getFieldLayout() ? email.getFieldLayout().getFields() : '',
+        element: email,} only %}
+    
+    <div class="buttons">
+        <input type="submit" value="Save" class="btn submit add icon">
+    </div>
+</form>
+{% endblock %}
