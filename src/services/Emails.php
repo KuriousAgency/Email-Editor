@@ -90,7 +90,7 @@ class Emails extends Component
         if ($model->id) {
             $record = EmailRecord::findOne($model->id);
             if (!$record) {
-                throw new Exception(Craft::t('commerce', 'No email exists with the ID “{id}”', ['id' => $model->id]));
+                throw new Exception(Craft::t('email-editor', 'No email exists with the ID “{id}”', ['id' => $model->id]));
             }
         } else {
             $record = new EmailRecord();
@@ -193,14 +193,17 @@ class Emails extends Component
         //Create custom variables for the CP test action
         $settings = Craft::$app->systemSettings->getSettings('email');
         $variables = [];
-        $variables['recipient'] = $user;
+        $variables['user'] = $user;
         $variables['settings'] = $settings;
-        $variables['link'] = '<a href="https://plugin.test/admin">My Account</a>';
-        $variables['order'] = Order::find()->inReverse()->one();
+		$variables['link'] = '<a href="https://plugin.test/admin">My Account</a>';
+
+		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+			$variables['order'] = Order::find()->inReverse()->one();
+		}
         
         //Create and run the send prep service
         $message = new Message(); 
-        $message = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$message);  
+		$message = $this->beforeSendPrep($email,$variables,$message);
         
         //Check that the email prep was successful
         if ($message == false){   
@@ -242,11 +245,12 @@ class Emails extends Component
                     'message' => $e->getMessage()
                 ]);
             } else {
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Subject:”. To: “{to}”. Template error: “{message}”', [
+                $error = Craft::t('email-editor', 'Email template parse error for email “{email}” in “Subject:”. To: “{to}”. Template error: “{message}”', [
                     'email' => $message->key,
                     'to' => $message->getTo(),
                     'message' => $event->getMessage()
-                ]);
+				]);
+				//Craft::dd($error);
             }
             Craft::error($error, __METHOD__);
 
@@ -277,11 +281,13 @@ class Emails extends Component
                     'message' => $e->getMessage()
                 ]);
             } else {
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Body:”. to: “{to}”. Template error: “{message}”', [
-                    'email' => $message->key,
+                $error = Craft::t('email-editor', 'Email template parse error for email “{email}” in “Body:”. to: “{to}”. Template error: “{message}”', [
+					'email' => $message->key,
+					'user' => $message->getTo(),
                     'to' => $message->getTo(),
                     'message' => $e->getMessage()
-                ]);
+				]);
+				Craft::dd($error);
             }
             Craft::error($error, __METHOD__);
 
