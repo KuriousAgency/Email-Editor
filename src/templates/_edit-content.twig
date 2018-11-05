@@ -21,9 +21,12 @@
     { label: "Emails", url: url('email-editor/index') }, 
 ] %}
 
+{% set fullPageForm = true %}
+{% set saveShortcutRedirect = 'email-editor/email/'~email.id %}
+
 {% block content %}
 <h2>{{ (email.id|length) ? "Edit" : "Add New" }}</h2>
-<form method="POST">
+
     {{ csrfInput() }}
     {{ redirectInput('email-editor') }}
     {{ forms.hidden({
@@ -60,8 +63,5 @@
         fields: email.getFieldLayout() ? email.getFieldLayout().getFields() : '',
         element: email,} only %}
     
-    <div class="buttons">
-        <input type="submit" value="Save" class="btn submit add icon">
-    </div>
-</form>
+
 {% endblock %}

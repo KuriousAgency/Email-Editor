@@ -16,10 +16,10 @@
 {% import "_includes/forms" as forms %}
 {% set selectedSubnavItem = 'settings' %}
 {% set title = "Email Editor | Settings" %}
-{% set tabs = {
+{# {% set tabs = {
     0: {'label':'Emails','url':'#emails'},
     1: {'label':'Fields','url':'#fields'}
-} %}
+} %} #}
 
 
 {% block actionButton %}
@@ -31,7 +31,7 @@
 {% endblock %}
 
 {% block content %}
-<div id="emails" class="">
+{# <div id="emails" class=""> #}
     <h2>Email Settings</h2>
     <div id="no-emails"{% if emails|length %} class="hidden"{% endif %}>
         <p>No emails exist yet.</p>
@@ -74,8 +74,8 @@
         </table>
     {% endif %}
 
-</div>
-<div id="fields" class="hidden">
+{# </div> #}
+{# <div id="fields" class="hidden">
     <h2>Set Email Fields</h2>
     <form method="POST">
     {{ csrfInput() }}
@@ -91,7 +91,7 @@
     <div class="buttons">
         <input type="submit" value="Save" class="btn submit add icon">
     </div>
-</div>
+</div> #}
 {% endblock %}
 
 {% js %}
