@@ -67,20 +67,23 @@ class EmailController extends Controller
         $layout = Craft::$app->fields->getLayoutByType(Email::class);
 
         //Import Commerce Emails
-        $commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
-        //Craft::dd($commerceEmails);
-        foreach ($commerceEmails as $commerceEmail) {
-            $check = EmailEditor::$plugin->emails->getAllEmailByHandle('commerceEmail'.$commerceEmail->id);
-            if ($check == null){
-                $email = new Email;
-                $email->subject = $commerceEmail->subject;
-                $email->handle = 'commerceEmail'.$commerceEmail->id;
-                $email->enabled = $commerceEmail->enabled;
-                $email->emailType = 'commerce';
-                $email->title = $commerceEmail->name;
-                $email->template = $commerceEmail->templatePath;
-                $email->emailContent = '';
-                Craft::$app->elements->saveElement($email);
+        $commerce = Craft::$app->plugins->getPlugin('commerce');
+        if ($commerce) {
+            $commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
+            //Craft::dd($commerceEmails);
+            foreach ($commerceEmails as $commerceEmail) {
+                $check = EmailEditor::$plugin->emails->getAllEmailByHandle('commerceEmail'.$commerceEmail->id);
+                if ($check == null){
+                    $email = new Email;
+                    $email->subject = $commerceEmail->subject;
+                    $email->handle = 'commerceEmail'.$commerceEmail->id;
+                    $email->enabled = $commerceEmail->enabled;
+                    $email->emailType = 'commerce';
+                    $email->title = $commerceEmail->name;
+                    $email->template = $commerceEmail->templatePath;
+                    $email->emailContent = '';
+                    Craft::$app->elements->saveElement($email);
+                }
             }
         }
         return $this->renderTemplate('email-editor/index');
