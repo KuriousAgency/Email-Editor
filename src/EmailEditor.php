@@ -184,21 +184,21 @@ class EmailEditor extends Plugin
             Mailer::class,
             Mailer::EVENT_BEFORE_SEND,
             function(Event $event) {
-                if ($event->message->key == null){
-                    //Ignores the sending of test emails from editorCP
-                } else {
+				//Craft::dd($event);
+                if ($event->message->key != null){
                     //Get the Email Element Associated with the Event
                     $handle = lcfirst(str_replace('_', '', ucwords($event->message->key, '_')));
                     $email = EmailEditor::$plugin->emails->getAllEmailByHandle($handle);
                     // Create Variables from existing variables
                     $variables = $event->message->variables;
-                    //Prepare email
+					//Prepare email
+					//Craft::dd($event);
                     $event->message = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$event->message);
-                    if ($event->craftEmail == false) {
-                        Craft::$app->getSession()->setNotice("Unable to send email");
-                    }
+                    //if ($event->craftEmail == false) {
+                    //    Craft::$app->getSession()->setNotice("Unable to send email");
+                    //}
                     //Update variables field on message (not sure this is necessary)
-                    $event->message->variables = $variables;
+                    //$event->message->variables = $variables;
                 }
             }
         );
@@ -344,18 +344,20 @@ class EmailEditor extends Plugin
             $email->emailContent = $systemEmail->body;
             Craft::$app->elements->saveElement($email);
         }
-        //Import Commerce Emails
-        $commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
-        foreach ($commerceEmails as $commerceEmail) {
-            $email = new EmailElement;
-            $email->subject = $commerceEmail->subject;
-            $email->handle = 'commerceEmail'.$commerceEmail->id;
-            $email->enabled = $commerceEmail->enabled;
-            $email->emailType = 'commerce';
-            $email->title = $commerceEmail->name;
-            $email->template = $commerceEmail->templatePath;
-            $email->emailContent = '';
-            Craft::$app->elements->saveElement($email);
-        }
+		//Import Commerce Emails
+		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+			$commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
+			foreach ($commerceEmails as $commerceEmail) {
+				$email = new EmailElement;
+				$email->subject = $commerceEmail->subject;
+				$email->handle = 'commerceEmail'.$commerceEmail->id;
+				$email->enabled = $commerceEmail->enabled;
+				$email->emailType = 'commerce';
+				$email->title = $commerceEmail->name;
+				$email->template = $commerceEmail->templatePath;
+				$email->emailContent = '';
+				Craft::$app->elements->saveElement($email);
+			}
+		}
     }
 }
