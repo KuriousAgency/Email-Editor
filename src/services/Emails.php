@@ -90,7 +90,7 @@ class Emails extends Component
         if ($model->id) {
             $record = EmailRecord::findOne($model->id);
             if (!$record) {
-                throw new Exception(Craft::t('commerce', 'No email exists with the ID “{id}”', ['id' => $model->id]));
+                throw new Exception(Craft::t('site', 'No email exists with the ID “{id}”', ['id' => $model->id]));
             }
         } else {
             $record = new EmailRecord();
@@ -196,7 +196,10 @@ class Emails extends Component
         $variables['recipient'] = $user;
         $variables['settings'] = $settings;
         $variables['link'] = '<a href="https://plugin.test/admin">My Account</a>';
-        $variables['order'] = Order::find()->inReverse()->one();
+        if (Craft::$app->plugins->getPlugin('commerce')){
+            $variables['order'] = Order::find()->inReverse()->one();
+        }
+        
         
         //Create and run the send prep service
         $message = new Message(); 
@@ -236,13 +239,13 @@ class Emails extends Component
             $message->setSubject($view->renderString($email->subject, $variables));
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Subject:”. Order: “{order}”. Template error: “{message}”', [
+                $error = Craft::t('site', 'Email template parse error for email “{email}” in “Subject:”. Order: “{order}”. Template error: “{message}”', [
                     'email' => $email->title,
                     'order' => $variables['order']->getShortNumber(),
                     'message' => $e->getMessage()
                 ]);
             } else {
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Subject:”. To: “{to}”. Template error: “{message}”', [
+                $error = Craft::t('site', 'Email template parse error for email “{email}” in “Subject:”. To: “{to}”. Template error: “{message}”', [
                     'email' => $message->key,
                     'to' => $message->getTo(),
                     'message' => $event->getMessage()
@@ -271,13 +274,13 @@ class Emails extends Component
 
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Body:”. Order: “{order}”. Template error: “{message}”', [
+                $error = Craft::t('site', 'Email template parse error for email “{email}” in “Body:”. Order: “{order}”. Template error: “{message}”', [
                     'email' => $email->title,
                     'order' => $variables['order']->getShortNumber(),
                     'message' => $e->getMessage()
                 ]);
             } else {
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Body:”. to: “{to}”. Template error: “{message}”', [
+                $error = Craft::t('site', 'Email template parse error for email “{email}” in “Body:”. to: “{to}”. Template error: “{message}”', [
                     'email' => $message->key,
                     'to' => $message->getTo(),
                     'message' => $e->getMessage()

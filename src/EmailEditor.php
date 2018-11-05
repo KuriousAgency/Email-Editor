@@ -19,6 +19,7 @@ use Craft;
 use yii\base\Event;
 use craft\base\Plugin;
 use craft\fields\Lightswitch;
+use craft\fields\PlainText;
 use craft\redactor\Field;
 use craft\models\FieldGroup;
 use craft\models\FieldLayout; 
@@ -304,7 +305,12 @@ class EmailEditor extends Plugin
         Craft::$app->fields->saveField($promoField);
 
         //Create Field - Content
-        $contentField = new Field();
+        $redactor = Craft::$app->plugins->getPlugin('redactor');
+        if ($redactor){
+            $contentField = new Field();
+        } else {
+            $contentField = new PlainText();
+        }
         $contentField->groupId = $groupModel->id;
         $contentField->name = 'Email Content';
         $contentField->instructions = 'Add email body content here';
@@ -345,17 +351,21 @@ class EmailEditor extends Plugin
             Craft::$app->elements->saveElement($email);
         }
         //Import Commerce Emails
-        $commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
-        foreach ($commerceEmails as $commerceEmail) {
-            $email = new EmailElement;
-            $email->subject = $commerceEmail->subject;
-            $email->handle = 'commerceEmail'.$commerceEmail->id;
-            $email->enabled = $commerceEmail->enabled;
-            $email->emailType = 'commerce';
-            $email->title = $commerceEmail->name;
-            $email->template = $commerceEmail->templatePath;
-            $email->emailContent = '';
-            Craft::$app->elements->saveElement($email);
+        //Check Commerce Exists
+        $commerce = Craft::$app->plugins->getPlugin('commerce');
+        if ($commerce) {
+            $commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
+            foreach ($commerceEmails as $commerceEmail) {
+                $email = new EmailElement;
+                $email->subject = $commerceEmail->subject;
+                $email->handle = 'commerceEmail'.$commerceEmail->id;
+                $email->enabled = $commerceEmail->enabled;
+                $email->emailType = 'commerce';
+                $email->title = $commerceEmail->name;
+                $email->template = $commerceEmail->templatePath;
+                $email->emailContent = '';
+                Craft::$app->elements->saveElement($email);
+            }
         }
     }
 }
