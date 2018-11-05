@@ -66,23 +66,25 @@ class EmailController extends Controller
     {
         $layout = Craft::$app->fields->getLayoutByType(Email::class);
 
-        //Import Commerce Emails
-        $commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
-        //Craft::dd($commerceEmails);
-        foreach ($commerceEmails as $commerceEmail) {
-            $check = EmailEditor::$plugin->emails->getAllEmailByHandle('commerceEmail'.$commerceEmail->id);
-            if ($check == null){
-                $email = new Email;
-                $email->subject = $commerceEmail->subject;
-                $email->handle = 'commerceEmail'.$commerceEmail->id;
-                $email->enabled = $commerceEmail->enabled;
-                $email->emailType = 'commerce';
-                $email->title = $commerceEmail->name;
-                $email->template = $commerceEmail->templatePath;
-                $email->emailContent = '';
-                Craft::$app->elements->saveElement($email);
-            }
-        }
+		//Import Commerce Emails
+		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+			$commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
+			//Craft::dd($commerceEmails);
+			foreach ($commerceEmails as $commerceEmail) {
+				$check = EmailEditor::$plugin->emails->getAllEmailByHandle('commerceEmail'.$commerceEmail->id);
+				if ($check == null){
+					$email = new Email;
+					$email->subject = $commerceEmail->subject;
+					$email->handle = 'commerceEmail'.$commerceEmail->id;
+					$email->enabled = $commerceEmail->enabled;
+					$email->emailType = 'commerce';
+					$email->title = $commerceEmail->name;
+					$email->template = $commerceEmail->templatePath;
+					$email->emailContent = '';
+					Craft::$app->elements->saveElement($email);
+				}
+			}
+		}
         return $this->renderTemplate('email-editor/index');
     }
 
@@ -216,6 +218,11 @@ class EmailController extends Controller
         
             // Save it
             if (Craft::$app->elements->saveElement($email)) {
+
+				$fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
+				$fieldLayout->type = Email::class . '\\'.$email->handle;
+				Craft::$app->getFields()->saveLayout($fieldLayout);
+
                 Craft::$app->getSession()->setNotice('Email saved.');
                 return $this->redirectToPostedUrl($email);
             } else {

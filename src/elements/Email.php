@@ -243,16 +243,16 @@ class Email extends Element
                     'emailType' => 'system',
                 ]
             ],
-            [
+		];
+		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+			$sources[] = [
                 'key' => 'commerce',
                 'label' => 'Commerce',
                 'criteria' => [
                     'emailType' => 'commerce',
                 ]
-            ],
-
-          
-        ];
+			];
+		}
 
         return $sources;
     }
@@ -263,7 +263,7 @@ class Email extends Element
             'title' => 'Title',
             'subject' => 'Subject',        
             'emailType' => 'Type',
-            'test' => '', 
+            'test' => 'Test', 
             //'settings' => '',
             //'delete' => '',           
         ];
@@ -371,7 +371,7 @@ class Email extends Element
      */
     public function getFieldLayout()
     {
-        return Craft::$app->fields->getLayoutByType(Email::class);
+        return Craft::$app->fields->getLayoutByType(Email::class.'\\'.$this->handle);
     }
 
  
