@@ -19,6 +19,7 @@ use Craft;
 use yii\base\Event;
 use craft\base\Plugin;
 use craft\fields\Lightswitch;
+use craft\fields\PlainText;
 use craft\redactor\Field;
 use craft\models\FieldGroup;
 use craft\models\FieldLayout; 
@@ -304,7 +305,12 @@ class EmailEditor extends Plugin
         Craft::$app->fields->saveField($promoField);
 
         //Create Field - Content
-        $contentField = new Field();
+        $redactor = Craft::$app->plugins->getPlugin('redactor');
+        if ($redactor){
+            $contentField = new Field();
+        } else {
+            $contentField = new PlainText();
+        }
         $contentField->groupId = $groupModel->id;
         $contentField->name = 'Email Content';
         $contentField->instructions = 'Add email body content here';

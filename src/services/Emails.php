@@ -239,7 +239,7 @@ class Emails extends Component
             $message->setSubject($view->renderString($email->subject, $variables));
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Subject:”. Order: “{order}”. Template error: “{message}”', [
+                $error = Craft::t('site', 'Email template parse error for email “{email}” in “Subject:”. Order: “{order}”. Template error: “{message}”', [
                     'email' => $email->title,
                     'order' => $variables['order']->getShortNumber(),
                     'message' => $e->getMessage()
@@ -275,7 +275,7 @@ class Emails extends Component
 
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
-                $error = Craft::t('commerce', 'Email template parse error for email “{email}” in “Body:”. Order: “{order}”. Template error: “{message}”', [
+                $error = Craft::t('site', 'Email template parse error for email “{email}” in “Body:”. Order: “{order}”. Template error: “{message}”', [
                     'email' => $email->title,
                     'order' => $variables['order']->getShortNumber(),
                     'message' => $e->getMessage()
