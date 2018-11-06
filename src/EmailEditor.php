@@ -28,13 +28,7 @@ use craft\commerce\Plugin as Commerce;
 use craft\commerce\events\MailEvent;
 use craft\commerce\services\Emails as CommerceEmails;
 use craft\mail\Mailer;
-//-- Remove below when removing field creation--//
-use craft\fields\Lightswitch;
-use craft\fields\PlainText;
-use craft\redactor\Field;
-use craft\models\FieldGroup;
-use craft\models\FieldLayout; 
-use craft\models\FieldLayoutTab;
+
 
 /**
  * Craft plugins are very much like little applications in and of themselves. We’ve made
@@ -101,15 +95,6 @@ class EmailEditor extends Plugin
             'emails' => EmailsService::class,
         ]);
 
-        // Register our site routes
-        Event::on(
-            UrlManager::class,
-            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
-                $event->rules['siteActionTrigger1'] = 'email-editor/email';
-            }
-        );
-
         // Register our CP routes
         Event::on(
             UrlManager::class,
@@ -151,7 +136,27 @@ class EmailEditor extends Plugin
             Plugins::EVENT_AFTER_INSTALL_PLUGIN,
             function (PluginEvent $event) {
                 if ($event->plugin === $this) {
-                    // We were just installed
+					// We were just installed
+
+					// Import System Emails
+					$systemEmails = Craft::$app->getSystemMessages()->getAllMessages();
+					foreach ($systemEmails as $systemEmail) {
+						$email = new EmailElement;
+						//$email->fieldLayoutId = $layout->id;
+						$email->subject = $systemEmail->subject;
+						$email->handle = lcfirst(str_replace('_', '', ucwords($systemEmail->key, '_')));
+						$email->enabled = 1;
+						$email->emailType = 'system';
+						$email->title = str_replace('_', ' ', ucwords($systemEmail->key, '_'));
+						$email->template = '_emails/system';
+						$email->emailContent = $systemEmail->body;
+						Craft::$app->elements->saveElement($email);
+					}
+					//Import Commerce Emails
+					if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+						$commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
+						$this->emails->importCommerceEmails($commerceEmails);
+					}
                 }
             }
         );
@@ -262,88 +267,5 @@ class EmailEditor extends Plugin
     {   
         return Craft::$app->controller->redirect('email-editor/settings');
     }
-    /**
-     * Populates db with fields and layouts for testing (To be removed)
-     * Creates email elements from existing system emails and pre-existing
-     * commerce emails.
-     *
-     */
-    protected function afterInstall()
-    {   
-        //-----------Creating Email Fields -----------//
-            //create field group
-            $groupModel = new FieldGroup();
-            $groupModel->name = 'Email Editor';
-            Craft::$app->fields->saveGroup($groupModel);
-            $groups = Craft::$app->fields->getAllGroups();
-            foreach($groups as $group) {
-                if($group->name != 'Email Editor') {
-                    continue;
-                }
-                $groupModel = $group;
-            }
-            $layout = Craft::$app->fields->getLayoutByType(EmailElement::class);
-            if ($layout->id == null) {
-                $layout = new FieldLayout;
-                $layout->type = EmailElement::class; 
-            }
-            //Create Field - Promo
-            $promoField = new Lightswitch();
-            $promoField->groupId = $groupModel->id;
-            $promoField->name = 'Promotional Section';
-            $promoField->instructions = 'Included promotional section in email template';
-            $promoField->handle = 'emailPromo';
-            Craft::$app->fields->saveField($promoField);
-        //Create Field - Content
-            $redactor = Craft::$app->plugins->getPlugin('redactor');
-            if ($redactor){
-                $contentField = new Field();
-            } else {
-                $contentField = new PlainText();
-            }
-            $contentField->groupId = $groupModel->id;
-            $contentField->name = 'Email Content';
-            $contentField->instructions = 'Add email body content here';
-            $contentField->handle = 'emailContent';
-            Craft::$app->fields->saveField($contentField);
-
-            Craft::$app->fields->refreshFields();
-
-            //Save Layout
-            $layout->setFields($groupModel->getFields());        
-            Craft::$app->fields->saveLayout($layout);
-
-            //Not 100% what this bit is doing but should automatically add the fields to emails
-            $tabModel = new FieldLayoutTab();
-            $tabModel->setLayout($layout);
-            $tabModel->name = 'Email Editor';
-            
-            $fields = $groupModel->getFields();
-            $tabModel->setFields($layout->getFields());
-            $layoutTabs = $layout->getTabs();
-
-            $layoutTabs[] = $tabModel;
-            $layout->setTabs($layoutTabs);
-        // --------- End of field imports ------------//
-
-        // Import System Emails
-        $systemEmails = Craft::$app->getSystemMessages()->getAllMessages();
-        foreach ($systemEmails as $systemEmail) {
-            $email = new EmailElement;
-            //$email->fieldLayoutId = $layout->id;
-            $email->subject = $systemEmail->subject;
-            $email->handle = lcfirst(str_replace('_', '', ucwords($systemEmail->key, '_')));
-            $email->enabled = 1;
-            $email->emailType = 'system';
-            $email->title = str_replace('_', ' ', ucwords($systemEmail->key, '_'));
-            $email->template = '_emails/system';
-            $email->emailContent = $systemEmail->body;
-            Craft::$app->elements->saveElement($email);
-        }
-		//Import Commerce Emails
-		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
-            $commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
-            $this->emails->importCommerceEmails($commerceEmails);
-		}
-    }
+    
 }
