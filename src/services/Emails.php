@@ -18,9 +18,9 @@ use Craft;
 use craft\base\Component;
 use craft\elements\actions\Delete;
 use craft\mail\Message;
-use craft\web\View;
 use craft\db\Query;
 use craft\helpers\Template;
+use craft\helpers\UrlHelper;
 use yii\helpers\Markdown;
 use craft\commerce\elements\Order;
 
@@ -65,16 +65,8 @@ class Emails extends Component
      */
     public function getAllEmails(): array
     {
-        // $rows = $this->_createEmailQuery()->all();
-
-        // $emails = [];
-        // foreach ($rows as $row) {
-        //     $emails[] = new Email($row);
-        // }
-
         $emailQuery = Email::find();
         $emails = $emailQuery->all();
-
         return $emails;
     }
 
@@ -95,31 +87,13 @@ class Emails extends Component
         } else {
             $record = new EmailRecord();
         }
-
-        // if ($runValidation && !$model->validate()) {
-        //     Craft::info('Email not saved due to validation error(s).', __METHOD__);
-
-        //     return false;
-        // }
-
         $record->name = $model->name;
         $record->subject = $model->subject;
         $record->type = $model->type;
         $record->handle = $model->handle;
-        //$record->enabled = $model->enabled;
         $record->template = $model->template;
-  
-
-        //$fieldLayout = $model->getFieldLayout();
-        //Craft::$app->getFields()->saveLayout($fieldLayout);
-        //$model->fieldLayoutId = $fieldLayout->id;
-        //$record->fieldLayoutId = $fieldLayout->id;
-
         $record->save(false);
-
-        // Now that we have a record ID, save it on the model
         $model->id = $record->id;
-
         return true;
     }
 
@@ -132,13 +106,10 @@ class Emails extends Component
     public function deleteEmailById($id): bool
     {
         $email = Email::findOne($id);
-
         if ($email) {
             Craft::$app->getElements()->deleteElement($email);
             return true;
         }
-        
-
         return false;
     }
     /**
@@ -147,16 +118,14 @@ class Emails extends Component
      * @param string $handle
      * @return Email
      */
-    public function getAllEmailByHandle(string $handle)
+    public function getAllEmailsByHandle(string $handle)
     {
         if (!$handle) {
             return null;
         }
         $query = Email::find();
         $query->handle($handle);
-
         return $query->one();
-        
     }
     /**
      * Get emails by type.
@@ -164,24 +133,37 @@ class Emails extends Component
      * @param string $type
      * @return Email[]
      */
-    public function getAllEmailByType(string $type): array
+    public function getAllEmailsByType(string $type): array
     {
         $emailQuery = Email::find();
         $results = $emailQuery
-            
             ->where(['emaileditor_email.emailType' => $type])
             ->all();
-
-        // $emails = [];
-        
-        
-        // foreach ($results as $row) {
-        //     $emails[] = new Email($row);
-        // }
-        // Craft::dd($results);
         return $results;
     }
-    
+    /**
+     * Import emails created by the commerce plugin.
+     *
+     * @param string $type
+     * @return Email[]
+     */
+    public function importCommerceEmails($commerceEmails)
+    {
+        foreach ($commerceEmails as $commerceEmail) {
+            $check = EmailEditor::$plugin->emails->getAllEmailsByHandle('commerceEmail'.$commerceEmail->id);
+            if ($check == null){
+                $email = new Email;
+                $email->subject = $commerceEmail->subject;
+                $email->handle = 'commerceEmail'.$commerceEmail->id;
+                $email->enabled = $commerceEmail->enabled;
+                $email->emailType = 'commerce';
+                $email->title = $commerceEmail->name;
+                $email->template = $commerceEmail->templatePath;
+                $email->emailContent = '';
+                Craft::$app->elements->saveElement($email);
+            }
+        }
+    }
     /**
      * Send test emails
      * 
@@ -195,7 +177,7 @@ class Emails extends Component
         $variables = [];
         $variables['user'] = $user;
         $variables['settings'] = $settings;
-		$variables['link'] = '<a href="https://plugin.test/admin">My Account</a>';
+		$variables['link'] = '<a href="'.UrlHelper::baseSiteUrl().'">My Account</a>';
 
 		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
 			$variables['order'] = Order::find()->inReverse()->one();
@@ -213,7 +195,6 @@ class Emails extends Component
             $message->setFrom([$settings['fromEmail'] => $settings['fromName']]);
             $message->setTo($user->email);
             Craft::$app->mailer->send($message);
-            //Send the Email
             return true;
         }
     }
@@ -230,6 +211,9 @@ class Emails extends Component
         $view->setTemplateMode($view::TEMPLATE_MODE_SITE);
 
         //Create Variables for the template
+        if ($email->fieldLayoutId == null){
+            return false;
+        }
         $fields = Craft::$app->fields->getLayoutById($email->fieldLayoutId)->getFields();
         foreach ($fields as $field){
             $variables[$field->handle] = $email[$field->handle];
@@ -318,38 +302,11 @@ class Emails extends Component
                 'emails.id',
                 'emails.name',
                 'emails.subject',
-                //'emails.enabled',
                 'emails.handle',
                 'emails.emailType',
                 'emails.template',
-                //'emails.fieldLayoutId'
             ])
             ->orderBy('name')
             ->from(['{{%emaileditor_email}} emails']);
     }
-
-//     /**
-//      * Returns a Query object prepped for retrieving Emails.
-//      *
-//      * @return Query
-//      */
-//     private function _createCommerceEmailQuery(): Query
-//     {
-//         return (new Query())
-//             ->select([
-//                 'emails.id',
-//                 'emails.name',
-//                 'emails.subject',
-//                 'emails.recipientType',
-//                 'emails.to',
-//                 'emails.bcc',
-//                 'emails.enabled',
-//                 'emails.templatePath',
-//                 'emails.attachPdf',
-//                 'emails.pdfTemplatePath'
-//             ])
-//             ->orderBy('name')
-//             ->from(['{{%commerce_emails}} emails']);
-//     }
-// }
 }

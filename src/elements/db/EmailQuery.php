@@ -1,10 +1,8 @@
 <?php
 namespace kuriousagency\emaileditor\elements\db;
 
-use craft\db\Query;
 use craft\elements\db\ElementQuery;
 use craft\helpers\Db;
-use kuriousagency\emaileditor\elements\Email;
 
 class EmailQuery extends ElementQuery
 {

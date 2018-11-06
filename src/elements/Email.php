@@ -16,13 +16,8 @@ use kuriousagency\emaileditor\records\Email as EmailRecord;
 
 use Craft;
 use craft\base\Element;
-use craft\elements\db\ElementQuery;
 use craft\elements\db\ElementQueryInterface;
-use craft\elements\actions\Delete;
-use craft\elements\actions\Edit;
-use craft\elements\actions\SetStatus;
 use craft\helpers\UrlHelper;
-use craft\commerce\records\Email as CommerceEmailRecord;
 
 
 /**
@@ -87,7 +82,7 @@ class Email extends Element
      *
      * @var string
      */
-    public $template = '_email/custom';
+    public $template = '_emails/custom';
 
     /**
      * Email CP handle
@@ -164,47 +159,6 @@ class Email extends Element
     /**
      * Creates an [[ElementQueryInterface]] instance for query purpose.
      *
-     * The returned [[ElementQueryInterface]] instance can be further customized by calling
-     * methods defined in [[ElementQueryInterface]] before `one()` or `all()` is called to return
-     * populated [[ElementInterface]] instances. For example,
-     *
-     * ```php
-     * // Find the entry whose ID is 5
-     * $entry = Entry::find()->id(5)->one();
-     *
-     * // Find all assets and order them by their filename:
-     * $assets = Asset::find()
-     *     ->orderBy('filename')
-     *     ->all();
-     * ```
-     *
-     * If you want to define custom criteria parameters for your elements, you can do so by overriding
-     * this method and returning a custom query class. For example,
-     *
-     * ```php
-     * class Product extends Element
-     * {
-     *     public static function find()
-     *     {
-     *         // use ProductQuery instead of the default ElementQuery
-     *         return new ProductQuery(get_called_class());
-     *     }
-     * }
-     * ```
-     *
-     * You can also set default criteria parameters on the ElementQuery if you don’t have a need for
-     * a custom query class. For example,
-     *
-     * ```php
-     * class Customer extends ActiveRecord
-     * {
-     *     public static function find()
-     *     {
-     *         return parent::find()->limit(50);
-     *     }
-     * }
-     * ```
-     *
      * @return ElementQueryInterface The newly created [[ElementQueryInterface]] instance.
      */
     public static function find(): ElementQueryInterface
@@ -223,19 +177,6 @@ class Email extends Element
     protected static function defineSources(string $context = null): array
     {
         $sources = [
-            // [
-            //     'key' => '*',
-            //     'label' => 'All Emails',
-            //     'criteria' => [],
-            //     'defaultSort' => ['dateCreated', 'desc']
-            // ],
-            [
-                'key' => 'custom',
-                'label' => 'Custom',
-                'criteria' => [
-                    'emailType' => 'custom',
-                ]
-            ],
             [
                 'key' => 'system',
                 'label' => 'System',
@@ -243,7 +184,16 @@ class Email extends Element
                     'emailType' => 'system',
                 ]
             ],
-		];
+        ];
+        if (EmailEditor::$plugin->emails->getAllEmailsByType('custom')){
+            $sources[] = [
+                'key' => 'custom',
+                'label' => 'Custom',
+                'criteria' => [
+                    'emailType' => 'custom',
+                ]
+            ];
+        }
 		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
 			$sources[] = [
                 'key' => 'commerce',
@@ -253,48 +203,28 @@ class Email extends Element
                 ]
 			];
 		}
-
         return $sources;
     }
-
+    /**
+     * Defines the column titles on element listing page.
+     *
+     * @return array The column titles
+     */
     protected static function defineTableAttributes(): array
     {
         return [
             'title' => 'Title',
             'subject' => 'Subject',        
             'emailType' => 'Type',
-            'test' => 'Test', 
-            //'settings' => '',
-            //'delete' => '',           
+            'test' => 'Test',          
         ];
     }
-    //protected static function defineActions(string $source = null): array
-    //{
-        // $user = Craft::$app->getUser();
-        // $admin = $user->isAdmin;
-        // $actions = [];
 
-        // if ($user && $admin) {
-        //     $actions[] = SetStatus::class;
-
-        //     $actions[] = Craft::$app->getElements()->createAction([
-        //             'type' => Edit::class,
-        //             'label' => Craft::t('app', 'Edit Email'),
-        //         ]);
-        //     $actions[] = Craft::$app->getElements()->createAction([
-        //         'type' => Delete::class,
-        //         'confirmationMessage' => Craft::t('app', 'Are you sure you want to delete the selected entries?'),
-        //         'successMessage' => Craft::t('app', 'Entries deleted.'),
-        //        ]);
-        // }
-        // return $actions;
-    //}
     protected function tableAttributeHtml(string $attribute): string
     {
         $user = Craft::$app->getUser();
         $admin = $user->isAdmin;
         switch ($attribute) {
-
             case 'test': {
                 $id = $this->id;
                 $url = 'email-editor/test/'.$id;
@@ -304,33 +234,7 @@ class Email extends Element
 
                 return $url ? $html : '';
             }
-            // case 'settings': {
-            //     $id = $this->id;    
-            //     $url = 'email-editor/settings/email/'.$id;           
-            //     if ( $user && $admin ) {
-                    
-            //         $html = '<div class="buttons">
-            //                     <a href="'.$url.'" class="btn icon submit">Settings</a>
-            //                 </div>';
-            //     } else {
-            //         $html = '';
-            //     }
-            //     return $url ? $html : '';
-            // }
-            // case 'delete': {
-            //     $id = $this->id;
-            //     $url = 'email-editor/delete/'.$id;
-            //     if ($user && $admin && ($this->emailType == 'custom')) {
-            //         $html = '<div class="buttons">
-            //                     <a href="'.$url.'" class="delete icon" title="Delete" role="button"></a>
-            //                  </div>';
-            //     } else {
-            //         $html = '';
-            //     }
-            //     return $url ? $html : '';
-            // }
         }
-
         return parent::tableAttributeHtml($attribute);
     }
     // Public Methods
@@ -350,7 +254,6 @@ class Email extends Element
     {
         return [
             ['template', 'required'],
-            // ['someAttribute', 'default', 'value' => 'Some Default'],
         ];
     }
 
@@ -373,21 +276,6 @@ class Email extends Element
     {
         return Craft::$app->fields->getLayoutByType(Email::class.'\\'.$this->handle);
     }
-
- 
-
-    // public function getGroup()
-    // {
-    //     if ($this->groupId === null) {
-    //         throw new InvalidConfigException('Tag is missing its group ID');
-    //     }
-
-    //     if (($group = Craft::$app->getTags()->getTagGroupById($this->groupId)) === null) {
-    //         throw new InvalidConfigException('Invalid tag group ID: '.$this->groupId);
-    //     }
-
-    //     return $group;
-    // }
 
     // Indexes, etc.
     // -------------------------------------------------------------------------
@@ -465,65 +353,13 @@ class Email extends Element
             $record = new EmailRecord();
             $record->id = $this->id;
         }
-
         $record->subject = $this->subject;
         $record->template = $this->template;
         $record->handle = $this->handle;
         $record->emailType = $this->emailType;
-        
         $record->save(false);
-
         $this->id = $record->id;
-        // //Modify system/commerce emails based on changes made in editor
-        // switch ($this->emailType) {
-        //     //Change system emails
-        //     case 'system':
-        //         switch ($this->handle) {
-        //             case 'accountActivation':
-        //                 $key = 'account_activation';
-        //                 break;
-        //             case 'verifyNewEmail':
-        //                 $key = 'verify_new_email';
-        //                 break;
-        //             case 'forgotPassword':
-        //                 $key = 'forgot_password';
-        //                 break;
-        //             case 'testEmail':
-        //                 $key = 'test_email';
-        //                 break;
-        //         };
-        //         $email = Craft::$app->getSystemMessages()->getMessage($key);
-        //         $email->subject = $this->subject;
-        //         $email->body = $this->emailContent; 
-        //         $language = Craft::$app->getSites()->getPrimarySite()->language;
-        //         Craft::$app->getSystemMessages()->saveMessage($email,$language);
-        //         break;
-        //     case 'commerce':
-        //         break;
-        //}
         return parent::afterSave($isNew);
-
-        /*if ($isNew) {
-            \Craft::$app->db->createCommand()
-                ->insert('{{%emaileditor_email}}', [
-                    'subject' => $this->subject,
-                    'template' => $this->template,
-                    'handle' => $this->handle,
-                    'emailType' => $this->emailType,
-                ])
-                ->execute();
-        } else {
-            \Craft::$app->db->createCommand()
-                ->update('{{%emaileditor_email}}', [
-                    'subject' => $this->subject,
-                    'template' => $this->template,
-                    'handle' => $this->handle,
-                    'emailType' => $this->emailType,
-                ], ['id' => $this->id])
-                ->execute();
-        }*/
-    
-        // parent::afterSave($isNew);
     }
 
     /**
