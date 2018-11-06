@@ -10,12 +10,10 @@
 
 namespace kuriousagency\emaileditor\models;
 
-use kuriousagency\emaileditor\EmailEditor;
+//use kuriousagency\emaileditor\EmailEditor;
 
 use Craft;
 use craft\base\Model;
-use craft\behaviours\FieldLayoutBehaviour;
-use craft\models\FieldLayout;
 
 /**
  * Email Model
@@ -60,23 +58,4 @@ class Email extends Model
             [['id','fieldLayoutId'], 'number', 'integerOnly' => true],
         ];
     }
-
-    // /**
-    //  * @return FieldLayout
-    //  */
-    // public function getFieldLayout(): getFieldLayout
-    // {
-    //     $behavior = $this->getBehavior('fieldLayout');
-    //     return $behavior->getFieldLayout();
-    // }
-    // public function behaviors(): array
-    // {
-    //     return [
-    //         'fieldlayout' => [
-    //             'class' => FieldLayoutBehavior::class,
-    //             'elementType' => EmailEditor::class,
-    //             'idAttribute' => 'fieldLayoutId'
-    //         ]
-    //     ];
-    // }
 }

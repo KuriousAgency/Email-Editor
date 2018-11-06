@@ -3,7 +3,7 @@
 /**
  * EmailEditor plugin for Craft CMS 3.x
  *
- * EmailEditor index.twig
+ * EmailEditor _edit-settings.twig
  *
  * @author    Kurious Agency
  * @copyright Copyright (c) 2018 Kurious Agency
@@ -32,14 +32,14 @@
     name: 'action',
     value: 'email-editor/email/save' })
     }}
-    {# EMAIL ID -HIDDEN #}
+ 
     {{ forms.hidden({
     label: 'Email ID',
     id: 'emailId',
     name: 'emailId',
     value: email.id ?? '' })
     }}
-    {# EMAIL TITLE #}
+
     {{ forms.textField({
     label: 'Email Title',
     instructions: 'Add email name',
@@ -48,7 +48,7 @@
     value: email.title ?? '',
     require: true, })
     }}
-    {# EMAIL SUBJECT #}
+
     {{ forms.textField({
     label: 'Email Subject',
     instructions: 'Add email subject',
@@ -57,7 +57,7 @@
     value: email.subject ?? '',
     require: true, })
     }}
-    {# EMAIL ENABLED? #}
+
     {{ forms.lightswitchField({
     label: 'Enable Email',
     instructions: 'Is this email active?',
@@ -65,6 +65,7 @@
     name: 'enabled',
     on: email.enabled  })
     }}
+
     {{ forms.hidden({
     label: 'Email Type',
     id: 'emailType',
@@ -72,17 +73,16 @@
     value: email.emailType|length ? email.emailType : 'Custom',
     readonly: true })
     }}
-    {# EMAIL TEMPLATE #}
+
     {{ forms.textField({
     label: 'Email Template',
     id: 'template',
     name: 'template',
     value: email.template|length ? email.template : '_email/custom' })
     }}
-    {% include "_includes/fieldlayoutdesigner" with {
-    fieldLayout: craft.app.fields.getLayoutByType('kuriousagency\\emaileditor\\elements\\Email\\'~email.handle)
-    } only %}
-        
 
+    {% include "_includes/fieldlayoutdesigner" with {
+        fieldLayout: craft.app.fields.getLayoutByType('kuriousagency\\emaileditor\\elements\\Email\\'~email.handle)
+    } only %}
 
 {% endblock %}

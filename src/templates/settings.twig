@@ -3,7 +3,7 @@
 /**
  * EmailEditor plugin for Craft CMS 3.x
  *
- * EmailEditor index.twig
+ * EmailEditor settings.twig
  *
  * @author    Kurious Agency
  * @copyright Copyright (c) 2018 Kurious Agency
@@ -16,10 +16,7 @@
 {% import "_includes/forms" as forms %}
 {% set selectedSubnavItem = 'settings' %}
 {% set title = "Email Editor | Settings" %}
-{# {% set tabs = {
-    0: {'label':'Emails','url':'#emails'},
-    1: {'label':'Fields','url':'#fields'}
-} %} #}
+
 
 
 {% block actionButton %}
@@ -31,11 +28,13 @@
 {% endblock %}
 
 {% block content %}
-{# <div id="emails" class=""> #}
+
     <h2>Email Settings</h2>
+
     <div id="no-emails"{% if emails|length %} class="hidden"{% endif %}>
         <p>No emails exist yet.</p>
     </div>
+
     {% if emails|length %}
         <table id="email-table" class="data fullwidth collapsible">
             <thead>
@@ -64,9 +63,7 @@
                     </td>
                     <td data-title="Template">{{ email.template }}</td>
                     
-                    <td class="thin">{% if email.emailType == 'custom' %}<a class="delete icon"
-                                        title="{{ 'Delete'|t('commerce') }}"
-                                        role="button"></a>{% endif %}</td>
+                    <td class="thin">{% if email.emailType == 'custom' %}<a class="delete icon" title="{{ 'Delete'|t('commerce') }}" role="button"></a>{% endif %}</td>
                 </tr>
             {% endfor %}
 
@@ -74,24 +71,6 @@
         </table>
     {% endif %}
 
-{# </div> #}
-{# <div id="fields" class="hidden">
-    <h2>Set Email Fields</h2>
-    <form method="POST">
-    {{ csrfInput() }}
-    {{ redirectInput('email-editor/settings#emails') }}
-    {{ forms.hidden({
-        name: 'action',
-        value: 'email-editor/email/save-layout' })
-    }}
-
-    {% include "_includes/fieldlayoutdesigner" with {
-        fieldLayout: layout
-    } only %}
-    <div class="buttons">
-        <input type="submit" value="Save" class="btn submit add icon">
-    </div>
-</div> #}
 {% endblock %}
 
 {% js %}
