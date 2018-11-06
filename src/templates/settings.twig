@@ -40,6 +40,7 @@
             <thead>
             <tr>
                 <th scope="col">Title</th>
+				<th scope="col">Handle</th>
                 <th scope="col">Subject</th>
                 <th scope="col">Type</th>
                 <th scope="col">Template</th>
@@ -57,6 +58,7 @@
                         {% endif %}
                         <a href="{{ url('email-editor/settings/email/'~email.id) }}">{{ email.title }}</a>
                     </th>
+					<td data-title="Handle">{{ email.handle }}</td>
                     <td data-title="Subject">{{ email.subject }}</td>
                     <td data-title="Type">
                         {{ email.emailType}}
