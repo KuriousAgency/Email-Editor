@@ -58,6 +58,24 @@ class Emails extends Component
 
         return $query->one();
     }
+
+    /**
+     * Get an email by its handle.
+     *
+     * @param string $handle
+     * @return Email|null
+     */
+    public function getEmailByHandle($handle)
+    {
+        if (!$handle) {
+            return null;
+        }
+        $query = Email::find();
+        $query->handle($handle);
+
+        return $query->one();
+    }
+
     /**
      * Get all emails.
      *
@@ -77,25 +95,25 @@ class Emails extends Component
      * @return bool
      * @throws \Exception
      */
-    public function saveEmail(Email $model, bool $runValidation = true): bool
-    {
-        if ($model->id) {
-            $record = EmailRecord::findOne($model->id);
-            if (!$record) {
-                throw new Exception(Craft::t('email-editor', 'No email exists with the ID “{id}”', ['id' => $model->id]));
-            }
-        } else {
-            $record = new EmailRecord();
-        }
-        $record->name = $model->name;
-        $record->subject = $model->subject;
-        $record->type = $model->type;
-        $record->handle = $model->handle;
-        $record->template = $model->template;
-        $record->save(false);
-        $model->id = $record->id;
-        return true;
-    }
+    // public function saveEmail(Email $model, bool $runValidation = true): bool
+    // {
+    //     if ($model->id) {
+    //         $record = EmailRecord::findOne($model->id);
+    //         if (!$record) {
+    //             throw new Exception(Craft::t('email-editor', 'No email exists with the ID “{id}”', ['id' => $model->id]));
+    //         }
+    //     } else {
+    //         $record = new EmailRecord();
+    //     }
+    //     $record->name = $model->name;
+    //     $record->subject = $model->subject;
+    //     $record->type = $model->type;
+    //     $record->handle = $model->handle;
+    //     $record->template = $model->template;
+    //     $record->save(false);
+    //     $model->id = $record->id;
+    //     return true;
+    // }
 
     /**
      * Delete an email by its ID.

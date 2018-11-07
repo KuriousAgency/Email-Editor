@@ -119,10 +119,16 @@ class EmailController extends Controller
         $this->requirePostRequest();
         $request = Craft::$app->getRequest();
         $id = $request->getBodyParam('emailId');
+        
         if ($id) {
             $email = EmailEditor::$plugin->emails->getEmailById($id);
         } else {
             $email = new Email();
+            $handle = StringHelper::toCamelCase($request->getBodyParam('title',$email->handle));
+            if (EmailEditor::$plugin->emails->getEmailByHandle($handle)){
+                $response = Craft::t('email-editor', 'An email already exists with the handle: “{handle}”', ['handle' => $handle]);
+                return Craft::$app->getSession()->setError($response);
+            }
         }
         $email->subject = $request->getBodyParam('subject', $email->subject);
         $email->emailType = $request->getBodyParam('emailType', $email->emailType);
