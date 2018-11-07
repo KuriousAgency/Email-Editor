@@ -15,18 +15,16 @@
         "issues": "???"
     },
     "license": "MIT",
-    "authors": [
-        {
-            "name": "Kurious Agency",
-            "homepage": "kurious.agency"
-        }
-    ],
+    "authors": [{
+        "name": "Kurious Agency",
+        "homepage": "https://kurious.agency"
+    }],
     "require": {
         "craftcms/cms": "^3.0.0-RC1"
     },
     "autoload": {
         "psr-4": {
-          "kuriousagency\\emaileditor\\": "src/"
+            "kuriousagency\\emaileditor\\": "src/"
         }
     },
     "extra": {
