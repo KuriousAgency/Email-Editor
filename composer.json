@@ -2,7 +2,7 @@
     "name": "kuriousagency/email-editor",
     "description": "Edit emails",
     "type": "craft-plugin",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "keywords": [
         "craft",
         "cms",
@@ -10,10 +10,6 @@
         "craft-plugin",
         "emaileditor"
     ],
-    "support": {
-        "docs": "???",
-        "issues": "???"
-    },
     "license": "MIT",
     "authors": [{
         "name": "Kurious Agency",
@@ -32,7 +28,6 @@
         "handle": "email-editor",
         "hasCpSettings": true,
         "hasCpSection": true,
-        "changelogUrl": "???",
         "components": {
             "emails": "kuriousagency\\emaileditor\\services\\Emails"
         },
