@@ -89,33 +89,6 @@ class Emails extends Component
     }
 
     /**
-     * Save an email.
-     *
-     * @param Email $model
-     * @return bool
-     * @throws \Exception
-     */
-    // public function saveEmail(Email $model, bool $runValidation = true): bool
-    // {
-    //     if ($model->id) {
-    //         $record = EmailRecord::findOne($model->id);
-    //         if (!$record) {
-    //             throw new Exception(Craft::t('email-editor', 'No email exists with the ID “{id}”', ['id' => $model->id]));
-    //         }
-    //     } else {
-    //         $record = new EmailRecord();
-    //     }
-    //     $record->name = $model->name;
-    //     $record->subject = $model->subject;
-    //     $record->type = $model->type;
-    //     $record->handle = $model->handle;
-    //     $record->template = $model->template;
-    //     $record->save(false);
-    //     $model->id = $record->id;
-    //     return true;
-    // }
-
-    /**
      * Delete an email by its ID.
      *
      * @param int $id
@@ -177,7 +150,7 @@ class Emails extends Component
                 $email->emailType = 'commerce';
                 $email->title = $commerceEmail->name;
                 $email->template = $commerceEmail->templatePath;
-                $email->emailContent = '';
+                //$email->emailContent = '';
                 Craft::$app->elements->saveElement($email);
             }
         }
@@ -189,7 +162,7 @@ class Emails extends Component
      * @param User
      */
     public function sendTestEmail($user, $email): bool
-    {
+    {   
         //Create custom variables for the CP test action
         $settings = Craft::$app->systemSettings->getSettings('email');
         $variables = [];
@@ -204,7 +177,7 @@ class Emails extends Component
         //Create and run the send prep service
         $message = new Message(); 
 		$message = $this->beforeSendPrep($email,$variables,$message);
-        
+
         //Check that the email prep was successful
         if ($message == false){   
             return false;
@@ -234,7 +207,14 @@ class Emails extends Component
         }
         $fields = Craft::$app->fields->getLayoutById($email->fieldLayoutId)->getFields();
         foreach ($fields as $field){
-            $variables[$field->handle] = $email[$field->handle];
+            
+            if (get_class($field) == 'craft\\redactor\\Field'){
+                //Craft::dd($email[$field->handle]);
+                $variables[$field->handle] = Template::raw(Markdown::process($view->renderString($email[$field->handle], $variables)));
+            } else {
+                $variables[$field->handle] = $email[$field->handle];
+            }
+            
         } 
         //Create Subject inc. variables
         try {
@@ -250,7 +230,7 @@ class Emails extends Component
                 $error = Craft::t('email-editor', 'Email template parse error for email “{email}” in “Subject:”. To: “{to}”. Template error: “{message}”', [
                     'email' => $message->key,
                     'to' => $message->getTo(),
-                    'message' => $event->getMessage()
+                    'message' => $e->getMessage()
 				]);
 				//Craft::dd($error);
             }
@@ -263,16 +243,15 @@ class Emails extends Component
 
         //Create Body inc. variables       
         try {
-            if ($email->emailContent == null){
-                $textBody = '';
-            } else {
-                $textBody = $view->renderString($email->emailContent, $variables);
-            }
-            $message->setTextBody($textBody);
+            // if ($email->emailContent == null){
+            //     $textBody = '';
+            // } else {
+            //     $textBody = $view->renderString($email->emailContent, $variables);
+            // }
+            // $message->setTextBody($textBody);
             
-            $htmlBody = $view->renderTemplate($email->template, array_merge($variables, [
-                'emailContent' => Template::raw(Markdown::process($textBody)),
-            ]));
+            $htmlBody = $view->renderTemplate($email->template, $variables);
+            //    'emailContent' => Template::raw(Markdown::process($textBody)),
             $message->setHtmlBody($htmlBody);
 
         } catch (\Exception $e) {
@@ -288,16 +267,13 @@ class Emails extends Component
 					'user' => $message->getTo(),
                     'to' => $message->getTo(),
                     'message' => $e->getMessage()
-				]);
-				Craft::dd($error);
+                ]);
             }
             Craft::error($error, __METHOD__);
-
             $view->setTemplateMode($oldTemplateMode);
 
             return false;
         }
-
         //Set template mode as we found it
         $view->setTemplateMode($oldTemplateMode);
 

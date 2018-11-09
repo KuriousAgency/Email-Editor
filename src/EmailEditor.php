@@ -149,7 +149,7 @@ class EmailEditor extends Plugin
 						$email->emailType = 'system';
 						$email->title = str_replace('_', ' ', ucwords($systemEmail->key, '_'));
 						$email->template = '_emails/system';
-						$email->emailContent = $systemEmail->body;
+						//$email->emailContent = $systemEmail->body;
 						Craft::$app->elements->saveElement($email);
 					}
 					//Import Commerce Emails
