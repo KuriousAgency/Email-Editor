@@ -1,6 +1,6 @@
 <?php
 /**
- * EmailEditor plugin for Craft CMS 3.x
+ * Email Editor plugin for Craft CMS 3.x
  *
  * Edit emails
  *
@@ -41,7 +41,7 @@ use craft\mail\Mailer;
  * https://craftcms.com/docs/plugins/introduction
  *
  * @author    Kurious Agency
- * @package   EmailEditor
+ * @package   Email Editor
  * @since     1.0.0
  *
  * @property  EmailsService $emails
