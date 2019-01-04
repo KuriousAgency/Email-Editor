@@ -24,7 +24,7 @@
         }
     },
     "extra": {
-        "name": "EmailEditor",
+        "name": "Email Editor",
         "handle": "email-editor",
         "hasCpSettings": true,
         "hasCpSection": true,
