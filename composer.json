@@ -2,7 +2,6 @@
     "name": "kuriousagency/email-editor",
     "description": "Edit emails",
     "type": "craft-plugin",
-    "version": "1.0.2",
     "keywords": [
         "craft",
         "cms",
