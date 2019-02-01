@@ -193,7 +193,11 @@ class EmailEditor extends Plugin
                     $email = EmailEditor::$plugin->emails->getAllEmailsByHandle($handle);
                     // Create Variables from existing variables
                     $variables = $event->message->variables;
-					//Prepare email
+                    if ($event->message->key == 'test_email') {
+                        $variables['settings'] = Craft::$app->systemSettings->getSettings('email');
+                    }
+                    //Craft::dd($variables);
+                    //Prepare email
                     $event->message = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$event->message);
                 }
             }

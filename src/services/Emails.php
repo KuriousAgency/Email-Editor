@@ -166,9 +166,10 @@ class Emails extends Component
         //Create custom variables for the CP test action
         $settings = Craft::$app->systemSettings->getSettings('email');
         $variables = [];
+        $variables['title'] = $email->title;
         $variables['user'] = $user;
         $variables['settings'] = $settings;
-		$variables['link'] = '<a href="'.UrlHelper::baseSiteUrl().'">My Account</a>';
+		$variables['link'] = UrlHelper::baseSiteUrl();
 
 		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
 			$variables['order'] = Order::find()->inReverse()->one();
@@ -176,8 +177,7 @@ class Emails extends Component
         
         //Create and run the send prep service
         $message = new Message(); 
-		$message = $this->beforeSendPrep($email,$variables,$message);
-
+        $message = $this->beforeSendPrep($email,$variables,$message);
         //Check that the email prep was successful
         if ($message == false){   
             return false;
@@ -200,22 +200,27 @@ class Emails extends Component
         $view = Craft::$app->getView();
         $oldTemplateMode = $view->getTemplateMode();
         $view->setTemplateMode($view::TEMPLATE_MODE_SITE);
-
+        $variables['title'] = $email->title;
         //Create Variables for the template
         if ($email->fieldLayoutId == null){
             return false;
         }
         $fields = Craft::$app->fields->getLayoutById($email->fieldLayoutId)->getFields();
         foreach ($fields as $field){
-            
+            // if (get_class($field) == 'fruitstudios\\linkit\\fields\\LinkitField'){
+            //     $variables[$field->handle] = $view->renderTemplate('_components/emails/button', ['button'=>$email[$field->handle]]);
+            // } else 
             if (get_class($field) == 'craft\\redactor\\Field'){
-                //Craft::dd($email[$field->handle]);
-                $variables[$field->handle] = Template::raw(Markdown::process($view->renderString($email[$field->handle], $variables)));
+                $bodyField = $field->handle;
+            } else if (get_class($field) == 'benf\neo\Field'){
+                $variables['modules'] = $email[$field->handle];
             } else {
                 $variables[$field->handle] = $email[$field->handle];
             }
-            
-        } 
+        }
+        if (isset($bodyField) and !empty($email[$bodyField])){ 
+        $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
+        }
         //Create Subject inc. variables
         try {
             $message->setSubject($view->renderString($email->subject, $variables));
@@ -232,7 +237,6 @@ class Emails extends Component
                     'to' => $message->getTo(),
                     'message' => $e->getMessage()
 				]);
-				//Craft::dd($error);
             }
             Craft::error($error, __METHOD__);
 
@@ -240,7 +244,6 @@ class Emails extends Component
 
             return false;
         }
-
         //Create Body inc. variables       
         try {
             // if ($email->emailContent == null){
@@ -249,11 +252,9 @@ class Emails extends Component
             //     $textBody = $view->renderString($email->emailContent, $variables);
             // }
             // $message->setTextBody($textBody);
-            
             $htmlBody = $view->renderTemplate($email->template, $variables);
             //    'emailContent' => Template::raw(Markdown::process($textBody)),
             $message->setHtmlBody($htmlBody);
-
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
                 $error = Craft::t('site', 'Email template parse error for email “{email}” in “Body:”. Order: “{order}”. Template error: “{message}”', [
@@ -276,7 +277,7 @@ class Emails extends Component
         }
         //Set template mode as we found it
         $view->setTemplateMode($oldTemplateMode);
-
+        //Craft::dd($message);
         return $message;
     }
 
