@@ -163,13 +163,15 @@ class Emails extends Component
      */
     public function sendTestEmail($user, $email): bool
     {   
-        //Create custom variables for the CP test action
-        $settings = Craft::$app->systemSettings->getSettings('email');
+		//Create custom variables for the CP test action
+		$settings = Craft::$app->systemSettings->getSettings('email');
+		
         $variables = [];
         $variables['title'] = $email->title;
         $variables['user'] = $user;
         $variables['settings'] = $settings;
 		$variables['link'] = UrlHelper::baseSiteUrl();
+		$variables['handle'] = $email->handle;
 
 		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
 			$variables['order'] = Order::find()->inReverse()->one();
@@ -184,7 +186,8 @@ class Emails extends Component
         } else {
             //Set custom properties for test emails
             $message->setFrom([$settings['fromEmail'] => $settings['fromName']]);
-            $message->setTo($user->email);
+			$message->setTo($user->email);
+			$message->variables = $variables;
             Craft::$app->mailer->send($message);
             return true;
         }

@@ -186,27 +186,31 @@ class EmailEditor extends Plugin
             Mailer::class,
             Mailer::EVENT_BEFORE_SEND,
             function(Event $event) {
-				//Craft::dd($event);
-                if ($event->message->key != null){
-                    //Get the Email Element Associated with the Event
-                    $handle = lcfirst(str_replace('_', '', ucwords($event->message->key, '_')));
+				// Craft::dd($event);
+				
+				$messageVariables = $event->message->variables ? $event->message->variables : [];
+
+                if ($event->message->key != null || array_key_exists('handle',$event->message->variables)) {
+					//Get the Email Element Associated with the Event
+					if ($event->message->key != null) {
+						$handle = lcfirst(str_replace('_', '', ucwords($event->message->key, '_')));
+					} else {
+						$handle = $event->message->variables['handle'];
+					}
                     $email = EmailEditor::$plugin->emails->getAllEmailsByHandle($handle);
-                    // Create Variables from existing variables
-                    $variables = $event->message->variables;
-                    if ($event->message->key == 'test_email') {
-                        $variables['settings'] = Craft::$app->systemSettings->getSettings('email');
-                    }
-                    //Craft::dd($variables);
-                    //Prepare email
-                    $event->message = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$event->message);
+					// Create Variables from existing variables
+					if($email) {
+						$variables = $event->message->variables;
+						if ($event->message->key == 'test_email') {
+							$variables['settings'] = Craft::$app->systemSettings->getSettings('email');
+						}
+						//Craft::dd($variables);
+						//Prepare email
+						$event->message = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$event->message);
+					}
                 }
             }
-        );
-
-
-
-        
-
+		);
 
 /**
  * Logging in Craft involves using one of the following methods:

@@ -124,7 +124,7 @@ class EmailController extends Controller
             $email = EmailEditor::$plugin->emails->getEmailById($id);
         } else {
             $email = new Email();
-            $handle = StringHelper::toCamelCase($request->getBodyParam('title',$email->handle));
+            $handle = StringHelper::toCamelCase($request->getBodyParam('handle',$email->handle));
             if (EmailEditor::$plugin->emails->getEmailByHandle($handle)){
                 $response = Craft::t('email-editor', 'An email already exists with the handle: “{handle}”', ['handle' => $handle]);
                 return Craft::$app->getSession()->setError($response);
@@ -133,7 +133,7 @@ class EmailController extends Controller
         $email->subject = $request->getBodyParam('subject', $email->subject);
         $email->emailType = $request->getBodyParam('emailType', $email->emailType);
         if (!($email->emailType == 'commerce')) {
-            $email->handle = StringHelper::toCamelCase($request->getBodyParam('title',$email->handle));
+            $email->handle = StringHelper::toCamelCase($request->getBodyParam('handle',$email->handle));
         }
         $email->enabled = $request->getBodyParam('enabled', $email->enabled);
         $email->template = $request->getBodyParam('template', $email->template);

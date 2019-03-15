@@ -21,9 +21,12 @@
 ] %}
 
 {% set fullPageForm = true %}
-{% set saveShortcutRedirect = 'email-editor/settings/email/'~email.id %}
+{% if email.id|length %}
+	{% set saveShortcutRedirect = 'email-editor/settings/email/'~email.id %}
+{% endif %}
 
 {% block content %}
+
 <h2>{{ (email.id|length) ? "Edit" : "Add New" }}</h2>
 
     {{ csrfInput() }}
@@ -58,6 +61,15 @@
     require: true, })
     }}
 
+	{{ forms.textField({
+    label: 'Email Handle',
+    instructions: 'Add email handle',
+    id: 'handle',
+    name: 'handle',
+    value: email.handle ?? '',
+    require: true, })
+    }}
+
     {{ forms.lightswitchField({
     label: 'Enable Email',
     instructions: 'Is this email active?',
@@ -86,3 +98,9 @@
     } only %}
 
 {% endblock %}
+
+{% if email is empty or email.handle is empty %}
+    {% js %}
+        new Craft.HandleGenerator('#title', '#handle');
+    {% endjs %}
+{% endif %}
