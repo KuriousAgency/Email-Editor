@@ -144,11 +144,17 @@ class EmailController extends Controller
             $fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
             $fieldLayout->type = Email::class . '\\'.$email->handle;
             Craft::$app->getFields()->saveLayout($fieldLayout);
+            // $email->fieldLayoutId = $fieldLayout->id;
+            if ($email->emailType == 'commerce') {
+                EmailEditor::$plugin->emails->updateCommerce($email);
+            }
             Craft::$app->getSession()->setNotice('Email saved.');
             return $this->redirectToPostedUrl($email);
         } else {
             Craft::$app->getSession()->setError('Couldn’t save email.');
         }
+        // Update commerce emails in commerce
+
     }
     /**
      * Delete custom emails from the settings page

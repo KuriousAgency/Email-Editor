@@ -26,6 +26,7 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\commerce\Plugin as Commerce;
 use craft\commerce\events\MailEvent;
+use craft\commerce\events\EmailEvent;
 use craft\commerce\services\Emails as CommerceEmails;
 use craft\mail\Mailer;
 
@@ -176,6 +177,7 @@ class EmailEditor extends Plugin
                 ];
                 //Prepare Email
                 $e->craftEmail = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$e->craftEmail);
+                // Craft::dd($e->craftEmail);
                 if ($e->craftEmail == false) {
                     Craft::$app->getSession()->setError("Unable to send email");
                 }
@@ -186,11 +188,10 @@ class EmailEditor extends Plugin
             Mailer::class,
             Mailer::EVENT_BEFORE_SEND,
             function(Event $event) {
-				// Craft::dd($event);
-				
+		
 				$messageVariables = $event->message->variables ? $event->message->variables : [];
 
-                if ($event->message->key != null || array_key_exists('handle',$event->message->variables)) {
+                if ($event->message->key != null || array_key_exists('handle',$messageVariables)) {
 					//Get the Email Element Associated with the Event
 					if ($event->message->key != null) {
 						$handle = lcfirst(str_replace('_', '', ucwords($event->message->key, '_')));
@@ -210,8 +211,33 @@ class EmailEditor extends Plugin
 					}
                 }
             }
-		);
+        );
+        
+        Event::on(
+            CommerceEmails::class, 
+            CommerceEmails::EVENT_BEFORE_DELETE_EMAIL,
+            function(EmailEvent $e) {
+                $email = EmailEditor::$plugin->emails->getEmailByHandle('commerceEmail'.$e->email->id);
+                if ($email) {
+                    EmailEditor::$plugin->emails->deleteEmailById($email->id);
+                }
+            }
+        );
 
+        Event::on(
+            CommerceEmails::class, 
+            CommerceEmails::EVENT_AFTER_SAVE_EMAIL,
+            function(EmailEvent $e) {
+                $email = EmailEditor::$plugin->emails->getEmailByHandle('commerceEmail'.$e->email->id);
+                if ($email) {
+                    $email->title = $e->email->name;
+                    $email->template = $e->email->templatePath;
+                    $email->subject = $e->email->subject;
+                    $email->enabled = $e->email->enabled;
+                    Craft::$app->elements->saveElement($email);
+                }
+            }
+        );
 /**
  * Logging in Craft involves using one of the following methods:
  *
