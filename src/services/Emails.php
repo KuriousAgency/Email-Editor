@@ -175,7 +175,7 @@ class Emails extends Component
 		$variables['handle'] = $email->handle;
 
 		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
-			$variables['order'] = Order::find()->inReverse()->one();
+			$variables['order'] = Order::find()->isCompleted()->inReverse()->one();
 		}
         
         //Create and run the send prep service

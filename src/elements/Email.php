@@ -379,6 +379,10 @@ class Email extends Element
      */
     public function afterDelete()
     {
+        $record = EmailRecord::findOne($this->id);
+        if ($record) {
+            $record->delete();
+        }
     }
 
     /**
