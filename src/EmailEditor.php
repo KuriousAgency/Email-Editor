@@ -154,7 +154,7 @@ class EmailEditor extends Plugin
 						Craft::$app->elements->saveElement($email);
 					}
 					//Import Commerce Emails
-					if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+					if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
 						$commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
 						$this->emails->importCommerceEmails($commerceEmails);
 					}

@@ -194,7 +194,7 @@ class Email extends Element
                 ]
             ];
         }
-		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+		if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
 			$sources[] = [
                 'key' => 'commerce',
                 'label' => 'Commerce',

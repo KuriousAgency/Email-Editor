@@ -174,7 +174,7 @@ class Emails extends Component
 		$variables['link'] = UrlHelper::baseSiteUrl();
 		$variables['handle'] = $email->handle;
 
-		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+		if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
 			$variables['order'] = Order::find()->isCompleted()->inReverse()->one();
 		}
         

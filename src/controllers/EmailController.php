@@ -44,7 +44,7 @@ class EmailController extends Controller
         $layout = Craft::$app->fields->getLayoutByType(Email::class);
 
 		//Import Commerce Emails created since last index load
-		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+		if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
 			$commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
             EmailEditor::$plugin->emails->importCommerceEmails($commerceEmails);
 		}
