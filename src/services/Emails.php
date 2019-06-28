@@ -186,7 +186,7 @@ class Emails extends Component
             return false;
         } else {
             //Set custom properties for test emails
-            $message->setFrom([$settings['fromEmail'] => $settings['fromName']]);
+            $message->setFrom([Craft::parseEnv($settings['fromEmail']) => Craft::parseEnv($settings['fromName'])]);
 			$message->setTo($user->email);
 			$message->variables = $variables;
             Craft::$app->mailer->send($message);
