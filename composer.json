@@ -1,36 +1,38 @@
 {
-    "name": "kuriousagency/email-editor",
-    "description": "Edit emails",
-    "version": "1.0.8",
-    "type": "craft-plugin",
-    "keywords": [
-        "craft",
-        "cms",
-        "craftcms",
-        "craft-plugin",
-        "emaileditor"
-    ],
-    "license": "MIT",
-    "authors": [{
-        "name": "Kurious Agency",
-        "homepage": "https://kurious.agency"
-    }],
-    "require": {
-        "craftcms/cms": "^3.0.0-RC1"
-    },
-    "autoload": {
-        "psr-4": {
-            "kuriousagency\\emaileditor\\": "src/"
-        }
-    },
-    "extra": {
-        "name": "Email Editor",
-        "handle": "email-editor",
-        "hasCpSettings": true,
-        "hasCpSection": true,
-        "components": {
-            "emails": "kuriousagency\\emaileditor\\services\\Emails"
-        },
-        "class": "kuriousagency\\emaileditor\\EmailEditor"
-    }
+	"name": "kuriousagency/email-editor",
+	"description": "Edit emails",
+	"version": "1.0.9",
+	"type": "craft-plugin",
+	"keywords": [
+		"craft",
+		"cms",
+		"craftcms",
+		"craft-plugin",
+		"emaileditor"
+	],
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Kurious Agency",
+			"homepage": "https://kurious.agency"
+		}
+	],
+	"require": {
+		"craftcms/cms": "^3.0.0-RC1"
+	},
+	"autoload": {
+		"psr-4": {
+			"kuriousagency\\emaileditor\\": "src/"
+		}
+	},
+	"extra": {
+		"name": "Email Editor",
+		"handle": "email-editor",
+		"hasCpSettings": true,
+		"hasCpSection": true,
+		"components": {
+			"emails": "kuriousagency\\emaileditor\\services\\Emails"
+		},
+		"class": "kuriousagency\\emaileditor\\EmailEditor"
+	}
 }
