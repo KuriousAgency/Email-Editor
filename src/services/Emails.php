@@ -214,7 +214,7 @@ class Emails extends Component
             $emailFooter = Craft::$app->globals->getSetByHandle('email')->fieldValues['styledBody'];
             $variables['emailFooter'] = $view->renderString($emailFooter, $variables);
         }
-        
+        // Craft::dd($variables);
         //Create Subject inc. variables - we do this first to allow for empty body fields, or hardcoded email content.
         try {
             $message->setSubject($view->renderString($email->subject, $variables));
@@ -243,16 +243,16 @@ class Emails extends Component
             $fields = Craft::$app->fields->getLayoutById($email->fieldLayoutId)->getFields();
             foreach ($fields as $field){
                 if (get_class($field) == 'craft\\redactor\\Field'){
-                    $bodyField = $field->handle;
+                    $variables[$field->handle] = Template::raw(Markdown::process($view->renderString($email[$field->handle], $variables)));
                 } else if (get_class($field) == 'benf\neo\Field'){
                     $variables['modules'] = $email[$field->handle];
                 } else {
                     $variables[$field->handle] = $email[$field->handle];
                 }
             }
-            if (isset($bodyField) and !empty($email[$bodyField])){ 
-                $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
-            }
+            // if (isset($bodyField) and !empty($email[$bodyField])){ 
+            //     $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
+            // }
         }
         
         //Create Body inc. variables       

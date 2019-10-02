@@ -170,14 +170,16 @@ class EmailEditor extends Plugin
                 //Get the Email Element Associated with the Event
                 $email = EmailEditor::$plugin->emails->getAllEmailsByHandle('commerceEmail'.$e->commerceEmail->id);
                 //Create Commerce Specific Variables
+                $toEmailArr = array_keys($e->craftEmail->getTo());
+                $toEmail = array_pop($toEmailArr);
                 $variables = [
                     'order' => $e->order,
                     'orderHistory' => $e->orderHistory,
                     'recipient' => $e->order->shippingAddress->firstName,
+                    'user' => ['email' => $toEmail]
                 ];
                 //Prepare Email
                 $e->craftEmail = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$e->craftEmail);
-                // Craft::dd($e->craftEmail);
                 if ($e->craftEmail == false) {
                     Craft::$app->getSession()->setError("Unable to send email");
                 }
@@ -190,7 +192,8 @@ class EmailEditor extends Plugin
             function(Event $event) {
 		
 				$messageVariables = $event->message->variables ? $event->message->variables : [];
-
+                $toEmailArr = array_keys($event->message->getTo());
+                $toEmail = array_pop($toEmailArr);
                 if ($event->message->key != null || array_key_exists('handle',$messageVariables)) {
 					//Get the Email Element Associated with the Event
 					if ($event->message->key != null) {
@@ -201,13 +204,13 @@ class EmailEditor extends Plugin
                     $email = EmailEditor::$plugin->emails->getAllEmailsByHandle($handle);
 					// Create Variables from existing variables
 					if($email) {
-						$variables = $event->message->variables;
+                        $variables = $event->message->variables;
+                        $variables['user'] = ['email' => $toEmail];
 						if ($event->message->key == 'test_email') {
 							$variables['settings'] = Craft::$app->systemSettings->getSettings('email');
 						}
-						//Craft::dd($variables);
-						//Prepare email
-						$event->message = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$event->message);
+                        //Prepare email
+                        $event->message = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$event->message);
 					}
                 }
             }
