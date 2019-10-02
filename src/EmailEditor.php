@@ -205,7 +205,9 @@ class EmailEditor extends Plugin
 					// Create Variables from existing variables
 					if($email) {
                         $variables = $event->message->variables;
-                        $variables['user'] = ['email' => $toEmail];
+                        if (!array_key_exists('user',$variables)){
+                            $variables['user'] = ['email' => $toEmail];
+                        }
 						if ($event->message->key == 'test_email') {
 							$variables['settings'] = Craft::$app->systemSettings->getSettings('email');
 						}
