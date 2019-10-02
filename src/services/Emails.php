@@ -22,6 +22,7 @@ use craft\db\Query;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
 use yii\helpers\Markdown;
+use craft\commerce\Plugin as Commerce;
 use craft\commerce\elements\Order;
 
 /**
@@ -163,17 +164,23 @@ class Emails extends Component
      */
     public function sendTestEmail($user, $email): bool
     {   
-        //Create custom variables for the CP test action
-        $settings = Craft::$app->systemSettings->getSettings('email');
+		//Create custom variables for the CP test action
+		$settings = Craft::$app->systemSettings->getSettings('email');
+		
         $variables = [];
         $variables['title'] = $email->title;
         $variables['user'] = $user;
         $variables['settings'] = $settings;
 		$variables['link'] = UrlHelper::baseSiteUrl();
+		$variables['handle'] = $email->handle;
 
-		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
-			$variables['order'] = Order::find()->inReverse()->one();
-		}
+		if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
+			$variables['order'] = Order::find()->isCompleted()->inReverse()->one();
+        }
+
+        if (Craft::$app->plugins->isPluginInstalled('insiders') && Craft::$app->plugins->isPluginEnabled('insiders')) {
+			$variables['subscription'] = Subscription::find()->inReverse()->one();
+        }
         
         //Create and run the send prep service
         $message = new Message(); 
@@ -183,8 +190,9 @@ class Emails extends Component
             return false;
         } else {
             //Set custom properties for test emails
-            $message->setFrom([$settings['fromEmail'] => $settings['fromName']]);
-            $message->setTo($user->email);
+            $message->setFrom([Craft::parseEnv($settings['fromEmail']) => Craft::parseEnv($settings['fromName'])]);
+			$message->setTo($user->email);
+			$message->variables = $variables;
             Craft::$app->mailer->send($message);
             return true;
         }
@@ -201,27 +209,12 @@ class Emails extends Component
         $oldTemplateMode = $view->getTemplateMode();
         $view->setTemplateMode($view::TEMPLATE_MODE_SITE);
         $variables['title'] = $email->title;
-        //Create Variables for the template
-        if ($email->fieldLayoutId == null){
-            return false;
+        if (Craft::$app->globals->getSetByHandle('email')) {
+            $emailFooter = Craft::$app->globals->getSetByHandle('email')->fieldValues['styledBody'];
+            $variables['emailFooter'] = $view->renderString($emailFooter, $variables);
         }
-        $fields = Craft::$app->fields->getLayoutById($email->fieldLayoutId)->getFields();
-        foreach ($fields as $field){
-            // if (get_class($field) == 'fruitstudios\\linkit\\fields\\LinkitField'){
-            //     $variables[$field->handle] = $view->renderTemplate('_components/emails/button', ['button'=>$email[$field->handle]]);
-            // } else 
-            if (get_class($field) == 'craft\\redactor\\Field'){
-                $bodyField = $field->handle;
-            } else if (get_class($field) == 'benf\neo\Field'){
-                $variables['modules'] = $email[$field->handle];
-            } else {
-                $variables[$field->handle] = $email[$field->handle];
-            }
-        }
-        if (isset($bodyField) and !empty($email[$bodyField])){ 
-        $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
-        }
-        //Create Subject inc. variables
+        
+        //Create Subject inc. variables - we do this first to allow for empty body fields, or hardcoded email content.
         try {
             $message->setSubject($view->renderString($email->subject, $variables));
         } catch (\Exception $e) {
@@ -244,16 +237,26 @@ class Emails extends Component
 
             return false;
         }
+        //Create Variables for the template - empty fieldlayoutId no longer stops an email being sent.
+        if (!($email->fieldLayoutId == null)){
+            $fields = Craft::$app->fields->getLayoutById($email->fieldLayoutId)->getFields();
+            foreach ($fields as $field){
+                if (get_class($field) == 'craft\\redactor\\Field'){
+                    $bodyField = $field->handle;
+                } else if (get_class($field) == 'benf\neo\Field'){
+                    $variables['modules'] = $email[$field->handle];
+                } else {
+                    $variables[$field->handle] = $email[$field->handle];
+                }
+            }
+            if (isset($bodyField) and !empty($email[$bodyField])){ 
+                $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
+            }
+        }
+        
         //Create Body inc. variables       
         try {
-            // if ($email->emailContent == null){
-            //     $textBody = '';
-            // } else {
-            //     $textBody = $view->renderString($email->emailContent, $variables);
-            // }
-            // $message->setTextBody($textBody);
             $htmlBody = $view->renderTemplate($email->template, $variables);
-            //    'emailContent' => Template::raw(Markdown::process($textBody)),
             $message->setHtmlBody($htmlBody);
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
@@ -277,8 +280,19 @@ class Emails extends Component
         }
         //Set template mode as we found it
         $view->setTemplateMode($oldTemplateMode);
-        //Craft::dd($message);
         return $message;
+    }
+
+    public function updateCommerce($email) {
+        $id = preg_replace('/[^0-9]/', '', $email->handle);
+        $comEmail = Commerce::getInstance()->getEmails()->getEmailByID($id);
+        if ($comEmail) {
+            $comEmail->name = $email->title;
+            $comEmail->subject = $email->subject;
+            $comEmail->templatePath = $email->template;
+            $comEmail->enabled = $email->enabled;
+            Commerce::getInstance()->getEmails()->saveEmail($comEmail);
+        }
     }
 
 

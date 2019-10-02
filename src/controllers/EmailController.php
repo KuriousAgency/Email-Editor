@@ -44,7 +44,7 @@ class EmailController extends Controller
         $layout = Craft::$app->fields->getLayoutByType(Email::class);
 
 		//Import Commerce Emails created since last index load
-		if (Craft::$app->plugins->isPluginInstalled('commerce')) {
+		if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
 			$commerceEmails = Commerce::getInstance()->getEmails()->getAllEmails();
             EmailEditor::$plugin->emails->importCommerceEmails($commerceEmails);
 		}
@@ -124,7 +124,7 @@ class EmailController extends Controller
             $email = EmailEditor::$plugin->emails->getEmailById($id);
         } else {
             $email = new Email();
-            $handle = StringHelper::toCamelCase($request->getBodyParam('title',$email->handle));
+            $handle = StringHelper::toCamelCase($request->getBodyParam('handle',$email->handle));
             if (EmailEditor::$plugin->emails->getEmailByHandle($handle)){
                 $response = Craft::t('email-editor', 'An email already exists with the handle: “{handle}”', ['handle' => $handle]);
                 return Craft::$app->getSession()->setError($response);
@@ -133,7 +133,7 @@ class EmailController extends Controller
         $email->subject = $request->getBodyParam('subject', $email->subject);
         $email->emailType = $request->getBodyParam('emailType', $email->emailType);
         if (!($email->emailType == 'commerce')) {
-            $email->handle = StringHelper::toCamelCase($request->getBodyParam('title',$email->handle));
+            $email->handle = StringHelper::toCamelCase($request->getBodyParam('handle',$email->handle));
         }
         $email->enabled = $request->getBodyParam('enabled', $email->enabled);
         $email->template = $request->getBodyParam('template', $email->template);
@@ -144,11 +144,17 @@ class EmailController extends Controller
             $fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
             $fieldLayout->type = Email::class . '\\'.$email->handle;
             Craft::$app->getFields()->saveLayout($fieldLayout);
+            // $email->fieldLayoutId = $fieldLayout->id;
+            if ($email->emailType == 'commerce') {
+                EmailEditor::$plugin->emails->updateCommerce($email);
+            }
             Craft::$app->getSession()->setNotice('Email saved.');
             return $this->redirectToPostedUrl($email);
         } else {
             Craft::$app->getSession()->setError('Couldn’t save email.');
         }
+        // Update commerce emails in commerce
+
     }
     /**
      * Delete custom emails from the settings page
