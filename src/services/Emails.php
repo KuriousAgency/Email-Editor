@@ -176,7 +176,11 @@ class Emails extends Component
 
 		if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
 			$variables['order'] = Order::find()->isCompleted()->inReverse()->one();
-		}
+        }
+
+        if (Craft::$app->plugins->isPluginInstalled('insiders') && Craft::$app->plugins->isPluginEnabled('insiders')) {
+			$variables['subscription'] = Subscription::find()->inReverse()->one();
+        }
         
         //Create and run the send prep service
         $message = new Message(); 
@@ -205,6 +209,11 @@ class Emails extends Component
         $oldTemplateMode = $view->getTemplateMode();
         $view->setTemplateMode($view::TEMPLATE_MODE_SITE);
         $variables['title'] = $email->title;
+        if (Craft::$app->globals->getSetByHandle('email')) {
+            $emailFooter = Craft::$app->globals->getSetByHandle('email')->fieldValues['styledBody'];
+            $variables['emailFooter'] = $view->renderString($emailFooter, $variables);
+        }
+        
         //Create Subject inc. variables - we do this first to allow for empty body fields, or hardcoded email content.
         try {
             $message->setSubject($view->renderString($email->subject, $variables));
