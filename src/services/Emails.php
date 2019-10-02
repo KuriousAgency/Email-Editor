@@ -24,6 +24,7 @@ use craft\helpers\UrlHelper;
 use yii\helpers\Markdown;
 use craft\commerce\Plugin as Commerce;
 use craft\commerce\elements\Order;
+use craft\commerce\elements\Subscription;
 
 /**
  * Emails Service
