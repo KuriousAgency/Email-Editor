@@ -244,9 +244,16 @@ class Emails extends Component
             foreach ($fields as $field){
                 if (get_class($field) == 'craft\\redactor\\Field'){
                     $variables[$field->handle] = Template::raw(Markdown::process($view->renderString($email[$field->handle], $variables)));
-                } else if (get_class($field) == 'benf\neo\Field'){
-                    $variables['modules'] = $email[$field->handle];
-                } else {
+                } elseif(get_class($field) == 'benf\\neo\\Field') {
+                    $renderedNeo = $email[$field->handle]->all();
+                    foreach($renderedNeo as $block){
+                        if ($block->styledBody) {
+                            $block->styledBody = Template::raw(Markdown::process($view->renderString($block->styledBody, $variables)));
+                        }
+                    }
+                    $variables[$field->handle] = $renderedNeo;
+                }
+                else {
                     $variables[$field->handle] = $email[$field->handle];
                 }
             }
@@ -254,7 +261,6 @@ class Emails extends Component
             //     $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
             // }
         }
-        
         //Create Body inc. variables       
         try {
             $htmlBody = $view->renderTemplate($email->template, $variables);
