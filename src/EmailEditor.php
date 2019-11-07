@@ -172,11 +172,19 @@ class EmailEditor extends Plugin
                 //Create Commerce Specific Variables
                 $toEmailArr = array_keys($e->craftEmail->getTo());
                 $toEmail = array_pop($toEmailArr);
+                $user = Craft::$app->users->getUserByEmail($toEmail) ?? ['email' => $toEmail,'firstName'];
+                $order = $e->order;
+                if (!$user) {
+                    $user = [
+                        'email' => $toEmail,
+                        'firstName' => $order->shippingAddress->firstName ?? $order->billingAddress->firstName ?? $toEmail,
+                        'lastName' => $order->shippingAddress->lastName ?? $order->billingAddress->lastName ?? $toEmail
+                    ];
+                }
                 $variables = [
-                    'order' => $e->order,
+                    'order' => $rder,
                     'orderHistory' => $e->orderHistory,
-                    'recipient' => $e->order->shippingAddress->firstName,
-                    'user' => ['email' => $toEmail]
+                    'user' => $user
                 ];
                 //Prepare Email
                 $e->craftEmail = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$e->craftEmail);
@@ -194,6 +202,14 @@ class EmailEditor extends Plugin
 				$messageVariables = $event->message->variables ? $event->message->variables : [];
                 $toEmailArr = array_keys($event->message->getTo());
                 $toEmail = array_pop($toEmailArr);
+                $user = Craft::$app->users->getUserByEmail($toEmail);
+                if (!$user) {
+                    $user = [
+                        'email' => $toEmail,
+                        'firstName' => $order->shippingAddress->firstName ?? $order->billingAddress->firstName ?? $toEmail,
+                        'lastName' => $order->shippingAddress->lastName ?? $order->billingAddress->lastName ?? $toEmail
+                    ];
+                }
                 if ($event->message->key != null || array_key_exists('handle',$messageVariables)) {
 					//Get the Email Element Associated with the Event
 					if ($event->message->key != null) {
@@ -206,7 +222,7 @@ class EmailEditor extends Plugin
 					if($email) {
                         $variables = $event->message->variables;
                         if (!array_key_exists('user',$variables)){
-                            $variables['user'] = ['email' => $toEmail];
+                            $variables['user'] = $user;
                         }
 						if ($event->message->key == 'test_email') {
 							$variables['settings'] = Craft::$app->systemSettings->getSettings('email');

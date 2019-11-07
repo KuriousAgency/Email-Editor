@@ -216,8 +216,11 @@ class Emails extends Component
         }
         // Craft::dd($variables);
         //Create Subject inc. variables - we do this first to allow for empty body fields, or hardcoded email content.
+        $subject = $view->renderString($email->subject, $variables);
+        // Add the subject to the template variables
+        $variables['emailSubject'] = $subject;
         try {
-            $message->setSubject($view->renderString($email->subject, $variables));
+            $message->setSubject($subject);
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
                 $error = Craft::t('site', 'Email template parse error for email “{email}” in “Subject:”. Order: “{order}”. Template error: “{message}”', [
