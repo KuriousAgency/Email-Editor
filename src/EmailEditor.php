@@ -172,7 +172,7 @@ class EmailEditor extends Plugin
                 //Create Commerce Specific Variables
                 $toEmailArr = array_keys($e->craftEmail->getTo());
                 $toEmail = array_pop($toEmailArr);
-                $user = Craft::$app->users->getUserByEmail($toEmail) ?? ['email' => $toEmail,'firstName'];
+                $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail) ?? ['email' => $toEmail,'firstName'];
                 $order = $e->order;
                 if (!$user) {
                     $user = [
@@ -202,7 +202,7 @@ class EmailEditor extends Plugin
 				$messageVariables = $event->message->variables ? $event->message->variables : [];
                 $toEmailArr = array_keys($event->message->getTo());
                 $toEmail = array_pop($toEmailArr);
-                $user = Craft::$app->users->getUserByEmail($toEmail);
+                $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail);
                 if (!$user) {
                     $user = [
                         'email' => $toEmail,
