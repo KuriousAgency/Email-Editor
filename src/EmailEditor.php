@@ -182,7 +182,7 @@ class EmailEditor extends Plugin
                     ];
                 }
                 $variables = [
-                    'order' => $rder,
+                    'order' => $order,
                     'orderHistory' => $e->orderHistory,
                     'user' => $user
                 ];
