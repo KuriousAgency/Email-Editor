@@ -173,7 +173,7 @@ class EmailEditor extends Plugin
                 $variables = [
                     'order' => $e->order,
                     'orderHistory' => $e->orderHistory,
-                    'recipient' => $e->order->shippingAddress->firstName,
+                    'recipient' => $e->order->shippingAddress ? $e->order->shippingAddress->firstName : $e->order->billingAddress ? $e->order->billingAddress->firstName : null,
                 ];
                 //Prepare Email
                 $e->craftEmail = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$e->craftEmail);
