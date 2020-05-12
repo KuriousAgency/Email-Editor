@@ -24,6 +24,7 @@ use craft\helpers\UrlHelper;
 use yii\helpers\Markdown;
 use craft\commerce\Plugin as Commerce;
 use craft\commerce\elements\Order;
+use craft\commerce\elements\Subscription;
 
 /**
  * Emails Service
@@ -176,7 +177,11 @@ class Emails extends Component
 
 		if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
 			$variables['order'] = Order::find()->isCompleted()->inReverse()->one();
-		}
+        }
+
+        if (Craft::$app->plugins->isPluginInstalled('insiders') && Craft::$app->plugins->isPluginEnabled('insiders')) {
+			$variables['subscription'] = Subscription::find()->inReverse()->one();
+        }
         
         //Create and run the send prep service
         $message = new Message(); 
@@ -205,9 +210,17 @@ class Emails extends Component
         $oldTemplateMode = $view->getTemplateMode();
         $view->setTemplateMode($view::TEMPLATE_MODE_SITE);
         $variables['title'] = $email->title;
+        if (Craft::$app->globals->getSetByHandle('email')) {
+            $emailFooter = Craft::$app->globals->getSetByHandle('email')->fieldValues['styledBody'];
+            $variables['emailFooter'] = $view->renderString($emailFooter, $variables);
+        }
+        // Craft::dd($variables);
         //Create Subject inc. variables - we do this first to allow for empty body fields, or hardcoded email content.
+        $subject = $view->renderString($email->subject, $variables);
+        // Add the subject to the template variables
+        $variables['emailSubject'] = $subject;
         try {
-            $message->setSubject($view->renderString($email->subject, $variables));
+            $message->setSubject($subject);
         } catch (\Exception $e) {
             if ($email->emailType == 'commerce'){
                 $error = Craft::t('site', 'Email template parse error for email “{email}” in “Subject:”. Order: “{order}”. Template error: “{message}”', [
@@ -233,18 +246,24 @@ class Emails extends Component
             $fields = Craft::$app->fields->getLayoutById($email->fieldLayoutId)->getFields();
             foreach ($fields as $field){
                 if (get_class($field) == 'craft\\redactor\\Field'){
-                    $bodyField = $field->handle;
-                } else if (get_class($field) == 'benf\neo\Field'){
-                    $variables['modules'] = $email[$field->handle];
-                } else {
+                    $variables[$field->handle] = Template::raw(Markdown::process($view->renderString($email[$field->handle], $variables)));
+                } elseif(get_class($field) == 'benf\\neo\\Field') {
+                    $renderedNeo = $email[$field->handle]->all();
+                    foreach($renderedNeo as $block){
+                        if ($block->styledBody) {
+                            $block->styledBody = Template::raw(Markdown::process($view->renderString($block->styledBody, $variables)));
+                        }
+                    }
+                    $variables[$field->handle] = $renderedNeo;
+                }
+                else {
                     $variables[$field->handle] = $email[$field->handle];
                 }
             }
-            if (isset($bodyField) and !empty($email[$bodyField])){ 
-                $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
-            }
+            // if (isset($bodyField) and !empty($email[$bodyField])){ 
+            //     $variables[$bodyField] = Template::raw(Markdown::process($view->renderString($email[$bodyField], $variables)));
+            // }
         }
-        
         //Create Body inc. variables       
         try {
             $htmlBody = $view->renderTemplate($email->template, $variables);
