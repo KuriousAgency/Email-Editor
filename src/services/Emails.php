@@ -74,7 +74,7 @@ class Emails extends Component
         }
         $query = Email::find();
         $query->handle($handle);
-
+        $query->status(null);
         return $query->one();
     }
 
@@ -118,6 +118,7 @@ class Emails extends Component
         }
         $query = Email::find();
         $query->handle($handle);
+        $query->status(null);
         return $query->one();
     }
     /**
