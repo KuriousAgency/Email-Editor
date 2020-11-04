@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2018 Kurious Agency
  */
 
-namespace kuriousagency\emaileditor\assetbundles\EmailEditor;
+namespace kuriousagency\emaileditor\assetbundles\emaileditor;
 
 use Craft;
 use craft\web\AssetBundle;
