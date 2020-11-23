@@ -3,7 +3,7 @@
         <path id="a" d="M0 0H90.89v100H.001z"/>
     </defs>
     <g fill="none" fill-rule="evenodd">
-        <g opacity=".25">
+        <g >
             <path fill="#FFF" d="M30.504 38.484l19.94 9.971 19.941-9.97v-3.44h-39.88z"/>
             <path fill="#FFF" d="M49.323 53.465l-18.818-9.397v20.887h39.88V44.068l-18.818 9.397a2.497 2.497 0 0 1-2.244 0"/>
             <g transform="translate(5)">
