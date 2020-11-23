@@ -95,8 +95,82 @@ class EmailEditor extends Plugin
         $this->setComponents([
             'emails' => EmailsService::class,
         ]);
-
+        
+        $this->_registerEvents();
         // Register our CP routes
+        
+/**
+ * Logging in Craft involves using one of the following methods:
+ *
+ * Craft::trace(): record a message to trace how a piece of code runs. This is mainly for development use.
+ * Craft::info(): record a message that conveys some useful information.
+ * Craft::warning(): record a warning message that indicates something unexpected has happened.
+ * Craft::error(): record a fatal error that should be investigated as soon as possible.
+ *
+ * Unless `devMode` is on, only Craft::warning() & Craft::error() will log to `craft/storage/logs/web.log`
+ *
+ * It's recommended that you pass in the magic constant `__METHOD__` as the second parameter, which sets
+ * the category to the method (prefixed with the fully qualified class name) where the constant appears.
+ *
+ * To enable the Yii debug toolbar, go to your user account in the AdminCP and check the
+ * [] Show the debug toolbar on the front end & [] Show the debug toolbar on the Control Panel
+ *
+ * http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
+ */
+        Craft::info(
+            Craft::t(
+                'email-editor',
+                '{name} plugin loaded',
+                ['name' => $this->name]
+            ),
+            __METHOD__
+        );
+    }
+
+    public function getCpNavItem(): array
+    {
+        $user = Craft::$app->getUser();
+        $admin = $user->isAdmin;
+        $item = parent::getCpNavItem();
+        $item['subnav']['emails'] = ['label' => 'Emails', 'url' => 'email-editor'];
+        if ($admin){
+            $item['subnav']['settings'] = ['label' => 'Settings', 'url' => 'email-editor/settings/'];
+        }
+        return $item;
+    }
+
+    // Protected Methods
+    // =========================================================================
+
+    /**
+     * Creates and returns the model used to store the plugin’s settings.
+     *
+     * return \craft\base\Model|null
+     */
+    //protected function createSettingsModel()
+    //{
+    //    return new Settings();
+    //}
+
+    /**
+     * Returns the rendered settings HTML, which will be inserted into the content
+     * block on the settings page.
+     *
+     * @return string The rendered settings HTML
+     */
+    public function getSettingsResponse()
+    {   
+        return Craft::$app->controller->redirect('email-editor/settings');
+    }
+
+    // Protected Methods
+    // =========================================================================
+
+    /**
+     * Creates all the event listeners
+     */
+    private function _registerEvents()
+    {
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
@@ -162,36 +236,64 @@ class EmailEditor extends Plugin
             }
         );
         
-        // Listen + override commerce emails
-        Event::on(
-            CommerceEmails::class, 
-            CommerceEmails::EVENT_BEFORE_SEND_MAIL,
-            function(MailEvent $e) {
-                //Get the Email Element Associated with the Event
-                $email = EmailEditor::$plugin->emails->getAllEmailsByHandle('commerceEmail'.$e->commerceEmail->id);
-                //Create Commerce Specific Variables
-                $toEmailArr = array_keys($e->craftEmail->getTo());
-                $toEmail = array_pop($toEmailArr);
-                $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail) ?? ['email' => $toEmail,'firstName'];
-                $order = $e->order;
-                if (!$user) {
-                    $user = [
-                        'email' => $toEmail,
-                        'firstName' => $order->shippingAddress->firstName ?? $order->billingAddress->firstName ?? $toEmail,
-                        'lastName' => $order->shippingAddress->lastName ?? $order->billingAddress->lastName ?? $toEmail
+        if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
+            // Listen + override commerce emails
+            Event::on(
+                CommerceEmails::class, 
+                CommerceEmails::EVENT_BEFORE_SEND_MAIL,
+                function(MailEvent $e) {
+                    //Get the Email Element Associated with the Event
+                    $email = EmailEditor::$plugin->emails->getAllEmailsByHandle('commerceEmail'.$e->commerceEmail->id);
+                    //Create Commerce Specific Variables
+                    $toEmailArr = array_keys($e->craftEmail->getTo());
+                    $toEmail = array_pop($toEmailArr);
+                    $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail) ?? ['email' => $toEmail,'firstName'];
+                    $order = $e->order;
+                    if (!$user) {
+                        $user = [
+                            'email' => $toEmail,
+                            'firstName' => $order->shippingAddress->firstName ?? $order->billingAddress->firstName ?? $toEmail,
+                            'lastName' => $order->shippingAddress->lastName ?? $order->billingAddress->lastName ?? $toEmail
+                        ];
+                    }
+                    $variables = [
+                        'order' => $order,
+                        'orderHistory' => $e->orderHistory,
+                        'user' => $user
                     ];
+                    //Prepare Email
+                    $e->craftEmail = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$e->craftEmail);
+                    if ($e->craftEmail == false) {
+                        Craft::$app->getSession()->setError("Unable to send email");
+                    }
+            });
+
+            Event::on(
+                CommerceEmails::class, 
+                CommerceEmails::EVENT_BEFORE_DELETE_EMAIL,
+                function(EmailEvent $e) {
+                    $email = EmailEditor::$plugin->emails->getEmailByHandle('commerceEmail'.$e->email->id);
+                    if ($email) {
+                        EmailEditor::$plugin->emails->deleteEmailById($email->id);
+                    }
                 }
-                $variables = [
-                    'order' => $order,
-                    'orderHistory' => $e->orderHistory,
-                    'user' => $user
-                ];
-                //Prepare Email
-                $e->craftEmail = EmailEditor::$plugin->emails->beforeSendPrep($email,$variables,$e->craftEmail);
-                if ($e->craftEmail == false) {
-                    Craft::$app->getSession()->setError("Unable to send email");
+            );
+
+            Event::on(
+                CommerceEmails::class, 
+                CommerceEmails::EVENT_AFTER_SAVE_EMAIL,
+                function(EmailEvent $e) {
+                    $email = EmailEditor::$plugin->emails->getEmailByHandle('commerceEmail'.$e->email->id);
+                    if ($email) {
+                        $email->title = $e->email->name;
+                        $email->template = $e->email->templatePath;
+                        $email->subject = $e->email->subject;
+                        $email->enabled = $e->email->enabled;
+                        Craft::$app->elements->saveElement($email);
+                    }
                 }
-        });
+            );
+        }
 
         // Listen + overide non-commerce emails
         Event::on(
@@ -233,94 +335,5 @@ class EmailEditor extends Plugin
                 }
             }
         );
-        
-        Event::on(
-            CommerceEmails::class, 
-            CommerceEmails::EVENT_BEFORE_DELETE_EMAIL,
-            function(EmailEvent $e) {
-                $email = EmailEditor::$plugin->emails->getEmailByHandle('commerceEmail'.$e->email->id);
-                if ($email) {
-                    EmailEditor::$plugin->emails->deleteEmailById($email->id);
-                }
-            }
-        );
-
-        Event::on(
-            CommerceEmails::class, 
-            CommerceEmails::EVENT_AFTER_SAVE_EMAIL,
-            function(EmailEvent $e) {
-                $email = EmailEditor::$plugin->emails->getEmailByHandle('commerceEmail'.$e->email->id);
-                if ($email) {
-                    $email->title = $e->email->name;
-                    $email->template = $e->email->templatePath;
-                    $email->subject = $e->email->subject;
-                    $email->enabled = $e->email->enabled;
-                    Craft::$app->elements->saveElement($email);
-                }
-            }
-        );
-/**
- * Logging in Craft involves using one of the following methods:
- *
- * Craft::trace(): record a message to trace how a piece of code runs. This is mainly for development use.
- * Craft::info(): record a message that conveys some useful information.
- * Craft::warning(): record a warning message that indicates something unexpected has happened.
- * Craft::error(): record a fatal error that should be investigated as soon as possible.
- *
- * Unless `devMode` is on, only Craft::warning() & Craft::error() will log to `craft/storage/logs/web.log`
- *
- * It's recommended that you pass in the magic constant `__METHOD__` as the second parameter, which sets
- * the category to the method (prefixed with the fully qualified class name) where the constant appears.
- *
- * To enable the Yii debug toolbar, go to your user account in the AdminCP and check the
- * [] Show the debug toolbar on the front end & [] Show the debug toolbar on the Control Panel
- *
- * http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
- */
-        Craft::info(
-            Craft::t(
-                'email-editor',
-                '{name} plugin loaded',
-                ['name' => $this->name]
-            ),
-            __METHOD__
-        );
     }
-
-    public function getCpNavItem(): array
-    {
-        $user = Craft::$app->getUser();
-        $admin = $user->isAdmin;
-        $item = parent::getCpNavItem();
-        $item['subnav']['emails'] = ['label' => 'Emails', 'url' => 'email-editor'];
-        if ($admin){
-            $item['subnav']['settings'] = ['label' => 'Settings', 'url' => 'email-editor/settings/'];
-        }
-        return $item;
-    }
-
-    // Protected Methods
-    // =========================================================================
-
-    /**
-     * Creates and returns the model used to store the plugin’s settings.
-     *
-     * return \craft\base\Model|null
-     */
-    //protected function createSettingsModel()
-    //{
-    //    return new Settings();
-    //}
-
-    /**
-     * Returns the rendered settings HTML, which will be inserted into the content
-     * block on the settings page.
-     *
-     * @return string The rendered settings HTML
-     */
-    public function getSettingsResponse()
-    {   
-        return Craft::$app->controller->redirect('email-editor/settings');
-    }
-    
 }
