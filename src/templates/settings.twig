@@ -9,76 +9,54 @@
  * @copyright Copyright (c) 2018 Kurious Agency
  * @link      kurious.agency
  * @package   EmailEditor
- * @since     1.0.0
+ * @since     2.0.0
  */
 #}
-{% extends '_layouts/cp' %}
 {% import "_includes/forms" as forms %}
-{% set selectedSubnavItem = 'settings' %}
 {% set title = "Email Editor | Settings" %}
 
-
-
-{% block actionButton %}
-    {% if currentUser.admin %}
-        <div class="buttons">
-            <a href="{{ url('email-editor/settings/email/new') }}" class="btn submit add icon">New email</a>
-        </div>
-    {% endif %}
-{% endblock %}
 
 {% block content %}
 
     <h2>Email Settings</h2>
 
-    <div id="no-emails"{% if emails|length %} class="hidden"{% endif %}>
-        <p>No emails exist yet.</p>
-    </div>
+    {{ forms.selectField({
+        label: "Email Section"|t('email-editor'),
+        instructions: "Select the Entries Section containing emails",
+        id: 'sectionid',
+        name: 'sectionId',
+        options: sections,
+        value: settings.sectionId
+    }) }}
 
-    {% if emails|length %}
-        <table id="email-table" class="data fullwidth collapsible">
-            <thead>
-            <tr>
-                <th scope="col">Title</th>
-				<th scope="col">Handle</th>
-                <th scope="col">Subject</th>
-                <th scope="col">Type</th>
-                <th scope="col">Template</th>
-                <td class="thin"></td>
-            </tr>
-            </thead>
-            <tbody>
-            {% for email in emails %}
-                <tr data-id="{{ email.id }}" data-name="{{ email.handle }}">
-                    <th scope="row" data-title="handle">
-                        {% if email.enabled %}
-                            <div class="status enabled"></div>
-                        {% else %}
-                            <div class="status"></div>
-                        {% endif %}
-                        <a href="{{ url('email-editor/settings/email/'~email.id) }}">{{ email.title }}</a>
-                    </th>
-					<td data-title="Handle">{{ email.handle }}</td>
-                    <td data-title="Subject">{{ email.subject }}</td>
-                    <td data-title="Type">
-                        {{ email.emailType}}
-                    </td>
-                    <td data-title="Template">{{ email.template }}</td>
-                    
-                    <td class="thin">{% if email.emailType == 'custom' %}<a class="delete icon" title="{{ 'Delete'|t('commerce') }}" role="button"></a>{% endif %}</td>
-                </tr>
-            {% endfor %}
+    <h2>Custom Emails</h2>
 
-            </tbody>
-        </table>
-    {% endif %}
+    {{ forms.editableTable({
+        'instructions': 'Set Custom Emails.'|t('email-editor'),
+        'id': 'customEmails',
+        'name': 'customEmails',
+        'staticRows':false,
+        'addRowLabel': 'Add Custom Email'|t('email-editor'),
+        'cols': {
+            'key': {
+                'heading': 'Key'|t('email-editor'),
+                'type': 'singleline'
+            },
+            'heading': {
+                'heading': 'Default Heading'|t('email-editor'),
+                'type': 'singleline'
+            },
+            'subject': {
+                'heading': 'Default Subject'|t('email-editor'),
+                'type': 'singleline',
+            },
+            'body': {
+                'heading': 'Default Body'|t('email-editor'),
+                'type': 'multiline',
+            }
+        }, 
+        'rows': settings.customEmails
+    }) }}
+
 
 {% endblock %}
-
-{% js %}
-    var adminTable = new Craft.AdminTable({
-      tableSelector: '#email-table',
-      deleteAction: 'email-editor/email/delete',
-      sortable: true,
-    });
-{% endjs %}    

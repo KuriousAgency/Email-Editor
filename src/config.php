@@ -23,8 +23,13 @@
  */
 
 return [
-
-    // This controls blah blah blah
-    //"someAttribute" => true,
-
+    'sectionId' => '8',
+    'customEmails' => [
+        [
+            'key' => 'custom_email_key',
+            'heading' => 'custom email heading',
+            'subject' => 'custom email subject',
+            'body' => 'this is a body field'
+        ]
+    ]
 ];

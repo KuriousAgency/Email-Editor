@@ -1,0 +1,27 @@
+{% import "_includes/forms" as forms %}
+<div class="meta read-only">
+	<div class="data"> 
+		{{ forms.selectField({
+			label: "Email"|t('email-editor'),
+			instructions: null,
+			id: 'emailKey',
+			name: 'emailKey',
+			options: options,
+			value: selectedOption
+		}) }}
+
+		{{ forms.textAreaField({
+			label: "Subject Line"|t('email-editor'),
+			instructions: null,
+			id: 'subject',
+			name: 'subject',
+			value: subject
+		}) }}
+
+		{{ forms.field({
+			label: "",
+		},'<div class="buttons">
+			<a href="/'~ testUrl ~'" class="btn icon submit">Send Test Email</a>
+		</div>')}}
+	</div>
+</div>

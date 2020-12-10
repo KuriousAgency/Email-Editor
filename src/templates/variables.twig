@@ -1,0 +1,10 @@
+{% import "_includes/forms" as forms %}
+ {{ forms.textareaField({
+    label: 'Test Variables',
+    instructions: 'JSON format',
+    id: 'testVariables',
+    name: 'testVariables',
+    class: 'code',
+    rows: 7,
+    value: testVariables })
+}}

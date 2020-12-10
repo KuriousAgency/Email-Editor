@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.0.0 - 2020-12-10
+### Changed
+- Remove Email Elements
+- Use System Messages as keys
+- Use Craft Entrys for emails
+- Send Test emails from entry edit page
+
+### Added
+- Setup Custom variables for test sending with json field on entry edit page
+- Set up custom emails in email editor settings
+- Custom emails and email entry section settings can be set from config file
+
 ## 1.0.15 - 2020-11-23
 ### Changed
 - Fixed broken menu icon.
