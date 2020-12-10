@@ -81,6 +81,11 @@ class EmailEditor extends Plugin
         $this->_registerPermissions();
         $this->_registerHooks();
         $this->_registerEvents();
+
+        // Craft Commerce Emails work differently to Craft Emails
+        if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
+            $this->_registerCommerceEvents();
+        }
         
         Craft::info(
             Craft::t(
@@ -149,13 +154,7 @@ class EmailEditor extends Plugin
 
             if($entry->sectionId == $this->getSettings()->sectionId)
             {
-                // $messages = Craft::$app->getSystemMessages()->getAllMessages();
-                $messages = $this->emails->getAllMessages();
-                $options = [];
-                foreach ($messages as $message) {
-                    $options[$message->key] = ucwords(str_replace('_',' ',$message->key));
-                }
-
+                $options = $this->emails->getAllMessages();
                 $currentMessage = $this->emails->getEmailById($entry->id);
 
                 return $view->renderTemplate(
@@ -180,17 +179,12 @@ class EmailEditor extends Plugin
 
                 if($entry->sectionId == $this->getSettings()->sectionId)
                 {
-                    $messages = $this->emails->getAllMessages();
-                $options = [];
-                foreach ($messages as $message) {
-                    $options[$message->key] = ucwords(str_replace('_',' ',$message->key));
-                }
                     $currentMessage = $this->emails->getEmailById($entry->id);
 
                     return $view->renderTemplate(
                         'email-editor/variables',
                         [
-                            'testVariables' => $currentMessage->testVariables
+                            'testVariables' => $currentMessage ? $currentMessage->testVariables : ''
                         ]
                     );
 
@@ -232,26 +226,23 @@ class EmailEditor extends Plugin
             Mailer::class,
             Mailer::EVENT_BEFORE_SEND,
             function(Event $event) {
-		
-				$messageVariables = $event->message->variables ? $event->message->variables : [];
-                $toEmailArr = array_keys($event->message->getTo());
-                $toEmail = array_pop($toEmailArr);
-                $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail);
-                if (!$user) {
-                    $user = [
-                        'email' => $toEmail,
-                        'firstName' => explode('@',$toEmail)[0],
-                        'friendlyName' => explode('@',$toEmail)[0]
-                    ];
-                }
                 if ($event->message->key != null) {
                     $email = EmailEditor::$plugin->emails->getEmailByKey($event->message->key);
                     if ($email) {  
-         
+                        $messageVariables = $event->message->variables ? $event->message->variables : [];
+                        $toEmailArr = array_keys($event->message->getTo());
+                        $toEmail = array_pop($toEmailArr);
+                        $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail);
+                        if (!$user) {
+                            $user = [
+                                'email' => $toEmail,
+                                'firstName' => explode('@',$toEmail)[0],
+                                'friendlyName' => explode('@',$toEmail)[0]
+                            ];
+                        }
                         $entry = Entry::find()->id($email->id)->one();
                         if($entry) {
                             $variables = $event->message->variables;
-                            Craft::dd($variables);
                             $variables['recipient'] = $user;
                             $variables['entry'] = $entry;
                             $event->message = EmailEditor::$plugin->emails->buildEmail($entry,$event->message,$email,$variables);
@@ -265,8 +256,42 @@ class EmailEditor extends Plugin
             SystemMessages::class,
             SystemMessages::EVENT_REGISTER_MESSAGES,
             function(RegisterEmailMessagesEvent $event) {
-                foreach ($this->getSettings()->customEmails as $customEmail) {
-                    $event->messages[] = $customEmail;
+                if ($customEmails = $this->getSettings()->customEmails) {
+                    foreach ($customEmails as $customEmail) {
+                        $event->messages[] = $customEmail;
+                    }
+                }
+            }
+        );
+    }
+
+    private function _registerCommerceEvents()
+    {
+        Event::on(
+            \craft\commerce\services\Emails::class, 
+            \craft\commerce\services\Emails::EVENT_BEFORE_SEND_MAIL,
+            function(\craft\commerce\events\EmailEvent $e) {
+                //Get the Email Editor Model Associated with the Commerce Email Event
+                $email = EmailEditor::$plugin->emails->getEmailByKey('commerceEmail'.$e->commerceEmail->id);
+                if ($email) {  
+                    $toEmailArr = array_keys($e->craftEmail->getTo());
+                    $toEmail = array_pop($toEmailArr);
+                    $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail);
+                    if (!$user) {
+                        $user = [
+                            'email' => $toEmail,
+                            'firstName' => $e->order->billingAddress->firstName ?? explode('@',$toEmail)[0],
+                            'friendlyName' => $e->order->billingAddress->firstName ?? explode('@',$toEmail)[0]
+                        ];
+                    }
+                    $entry = Entry::find()->id($email->id)->one();
+                    if($entry) {
+                        $variables['recipient'] = $user;
+                        $variables['entry'] = $entry;
+                        $variables['order'] = $e->order;
+                        $variables['orderHistory'] = $e->orderHistory;
+                        $event->message = EmailEditor::$plugin->emails->buildEmail($entry,$event->message,$email,$variables);
+                    }
                 }
             }
         );

@@ -62,15 +62,29 @@ class Emails extends Component
         return $email;
     }
 
-    public function getCustomEmails()
-    {
-        
-    }
-
     public function getAllMessages(): array
     {
-        // To do -- Append Commerce messages too
-        return Craft::$app->getSystemMessages()->getAllMessages();
+        $emails = [];
+        $systemEmails = Craft::$app->getSystemMessages()->getAllMessages();
+        foreach ($systemEmails as $systemEmail) {
+            $emails[$systemEmail->key] = ucwords(str_replace('_',' ',$systemEmail->key));
+        }
+        $emails += $this->getAllCommerceEmails();
+        return $emails;
+    }
+
+    public function getAllCommerceEmails()
+    {
+        $emails = [];
+        if (Craft::$app->plugins->isPluginInstalled('commerce') && Craft::$app->plugins->isPluginEnabled('commerce')) {
+            $commerceEmails = \craft\commerce\Plugin::getInstance()->getEmails()->getAllEmails();
+            if ($commerceEmails) {
+                foreach ($commerceEmails as $commerceEmail) {
+                    $emails['commerceEmail'.$commerceEmail->id] = $commerceEmail->name;
+                }
+            }
+        } 
+        return $emails;
     }
 
     public function getSystemMessageByKey($key)
@@ -110,9 +124,12 @@ class Emails extends Component
         $variables['recipient'] = $user;
 
         $testVariables = Json::decode($email->testVariables);
-        foreach ($testVariables as $key => $value) {
-            $variables[$key] = $value;
+        if ($testVariables) {
+            foreach ($testVariables as $key => $value) {
+                $variables[$key] = $value;
+            }
         }
+        
 
         $message = new Message;
         $message->setFrom([Craft::parseEnv($settings['fromEmail']) => Craft::parseEnv($settings['fromName'])]);
