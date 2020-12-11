@@ -123,7 +123,7 @@ class Emails extends Component
         $variables['entry'] = $entry;
         $variables['recipient'] = $user;
 
-        $testVariables = Json::decode($email->testVariables);
+        $testVariables = Json::decodeIfJson($email->testVariables);
         if ($testVariables) {
             foreach ($testVariables as $key => $value) {
                 $variables[$key] = $value;
@@ -151,7 +151,7 @@ class Emails extends Component
             return false;
         }
         
-        if (!$this->_createBody($entry,$variables,$message)) {
+        if (!$this->_createBody($entry,$variables,$message,$email)) {
             return false;
         }
         return $message;
@@ -199,7 +199,7 @@ class Emails extends Component
         return true;
     }
 
-    private function _createBody($entry,$variables,$message)
+    private function _createBody($entry,$variables,$message,$email)
     {
         $view = Craft::$app->getView();
         $siteSettings = Craft::$app->getSections()->getSectionSiteSettings($entry->sectionId);
@@ -214,14 +214,23 @@ class Emails extends Component
         
         try {
             $htmlBody = $view->renderTemplate($template, $variables, $view::TEMPLATE_MODE_SITE);
+            // Lets double render incase the user has any {variable} stuff in there.
+            try {
+                $htmlBody = $view->renderString($htmlBody,$variables,$view::TEMPLATE_MODE_SITE);
+
+            } catch (\Exception $e) {
+                $error = Craft::t('email-editor', 'Email template parse error for email {email}. Failed to render content variables. Template error: {message}', [
+                    'email' => $email->systemMessageKey,
+                    'message' => $e->getMessage()
+                ]);
+            }
             $message->setHtmlBody($htmlBody);
         } catch (\Exception $e) {
-            $error = Craft::t('email-editor', 'Email template parse error for email “{email}” in “Body:”. to: “{to}”. Template error: “{message}”', [
-                'email' => $message->key,
-                'to' => join(' ,',$message->getTo()),
+            $error = Craft::t('email-editor', 'Email template parse error for email {email}. Failed to set bodyHtml. Template error: {message}', [
+                'email' => $email->systemMessageKey,
                 'message' => $e->getMessage()
             ]);
-            Craft::error($error, __METHOD__);
+            Craft::dd($e);
             return false;
         }
            
