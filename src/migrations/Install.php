@@ -60,7 +60,7 @@ class Install extends Migration
         if ($tableSchema === null) {
             $tablesCreated = true;
             $this->createTable(
-                '{{%emaileditor_emails}}',
+                '{{%emaileditor_email}}',
                 [
                     'id' => $this->primaryKey(),
                     'dateCreated' => $this->dateTime()->notNull(),
