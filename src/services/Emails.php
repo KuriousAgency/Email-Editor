@@ -19,9 +19,12 @@ use Craft;
 use craft\base\Component;
 
 use craft\db\Query;
+use craft\db\Table;
 
 use craft\elements\Entry;
 
+use craft\helpers\DateTimeHelper;
+use craft\helpers\Db;
 use craft\helpers\Json;
 use craft\helpers\Template;
 use craft\helpers\UrlHelper;
@@ -41,9 +44,10 @@ class Emails extends Component
     public function getEmailById($id)
     {
         $query = $this->_createEmailQuery()
-            ->where(['id' => $id])
+            ->andWhere(Db::parseParam('emails.id',$id))
             ->one();
-        if (!$query) {
+
+            if (!$query) {
             return null;
         }
         $email = new Email($query);
@@ -53,8 +57,9 @@ class Emails extends Component
     public function getEmailByKey($key)
     {
         $query = $this->_createEmailQuery()
-            ->where(['systemMessageKey' => $key])
+            ->andWhere(Db::parseParam('emails.systemMessageKey',$key))
             ->one();
+
         if (!$query) {
             return null;
         }
@@ -123,13 +128,15 @@ class Emails extends Component
         $variables['entry'] = $entry;
         $variables['recipient'] = $user;
 
-        $testVariables = Json::decodeIfJson($email->testVariables);
-        if ($testVariables) {
-            foreach ($testVariables as $key => $value) {
-                $variables[$key] = $value;
+        if ($email->testVariables) {
+            $rendered = Craft::$app->getView()->renderString($email->testVariables, $variables, Craft::$app->getView()::TEMPLATE_MODE_SITE);
+            $testVariables = Json::decodeIfJson($rendered);
+            if ($testVariables) {
+                foreach ($testVariables as $key => $value) {
+                    $variables[$key] = $value;
+                }
             }
         }
-        
 
         $message = new Message;
         $message->setFrom([Craft::parseEnv($settings['fromEmail']) => Craft::parseEnv($settings['fromName'])]);
@@ -168,6 +175,7 @@ class Emails extends Component
      */
     private function _createEmailQuery(): Query
     {
+        $now = DateTimeHelper::currentUTCDateTime();
         return (new Query())
             ->select([
                 'emails.id',
@@ -175,7 +183,15 @@ class Emails extends Component
                 'emails.subject',
                 'emails.testVariables'
             ])
-            ->orderBy('id')
+            ->innerJoin(['elements' => Table::ELEMENTS], '[[emails.id]] = [[elements.id]]')
+            ->innerJoin(['elements_sites' => Table::ELEMENTS_SITES], '[[emails.id]] = [[elements_sites.elementId]]')
+            ->innerJoin(['entries' => Table::ENTRIES], '[[emails.id]] = [[entries.id]]')
+            ->where(Db::parseParam('elements_sites.siteId',Craft::$app->getSites()->currentSite->id))
+            ->andWhere(Db::parseParam('elements_sites.enabled',1))
+            ->andWhere(Db::parseParam('elements.dateDeleted',':empty:'))
+            ->andWhere(Db::parseDateParam('entries.postDate', $now, '<='))
+            ->andWhere(['or',Db::parseDateParam('entries.expiryDate', $now, '>'),Db::parseDateParam('entries.expiryDate', ':empty:')])
+            ->orderBy('entries.postDate')
             ->from(['{{%emaileditor_email}} emails']);
     }
 
@@ -230,7 +246,6 @@ class Emails extends Component
                 'email' => $email->systemMessageKey,
                 'message' => $e->getMessage()
             ]);
-            Craft::dd($e);
             return false;
         }
            

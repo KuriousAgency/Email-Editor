@@ -240,7 +240,7 @@ class EmailEditor extends Plugin
                                 'friendlyName' => explode('@',$toEmail)[0]
                             ];
                         }
-                        $entry = Entry::find()->id($email->id)->one();
+                        $entry = Entry::find()->id($email->id)->orderBy('postDate desc')->one();
                         if($entry) {
                             $variables = $event->message->variables;
                             $variables['recipient'] = $user;
@@ -270,9 +270,10 @@ class EmailEditor extends Plugin
         Event::on(
             \craft\commerce\services\Emails::class, 
             \craft\commerce\services\Emails::EVENT_BEFORE_SEND_MAIL,
-            function(\craft\commerce\events\EmailEvent $e) {
+            function(\craft\commerce\events\MailEvent $e) {
                 //Get the Email Editor Model Associated with the Commerce Email Event
                 $email = EmailEditor::$plugin->emails->getEmailByKey('commerceEmail'.$e->commerceEmail->id);
+
                 if ($email) {  
                     $toEmailArr = array_keys($e->craftEmail->getTo());
                     $toEmail = array_pop($toEmailArr);
@@ -284,13 +285,13 @@ class EmailEditor extends Plugin
                             'friendlyName' => $e->order->billingAddress->firstName ?? explode('@',$toEmail)[0]
                         ];
                     }
-                    $entry = Entry::find()->id($email->id)->one();
+                    $entry = Entry::find()->id($email->id)->orderBy('postDate desc')->one();
                     if($entry) {
                         $variables['recipient'] = $user;
                         $variables['entry'] = $entry;
                         $variables['order'] = $e->order;
                         $variables['orderHistory'] = $e->orderHistory;
-                        $event->message = EmailEditor::$plugin->emails->buildEmail($entry,$event->message,$email,$variables);
+                        $e->craftEmail = EmailEditor::$plugin->emails->buildEmail($entry,$e->craftEmail,$email,$variables);
                     }
                 }
             }
