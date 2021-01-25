@@ -41,6 +41,8 @@ use craft\services\UserPermissions;
 use craft\web\UrlManager;
 use craft\web\twig\variables\CraftVariable;
 
+use craft\commerce\services\Emails;
+
 use yii\base\Event;
 
 /**
@@ -268,8 +270,8 @@ class EmailEditor extends Plugin
     private function _registerCommerceEvents()
     {
         Event::on(
-            \craft\commerce\services\Emails::class, 
-            \craft\commerce\services\Emails::EVENT_BEFORE_SEND_MAIL,
+            CommerceEmails::class, 
+            CommerceEmails::EVENT_BEFORE_SEND_MAIL,
             function(\craft\commerce\events\MailEvent $e) {
                 //Get the Email Editor Model Associated with the Commerce Email Event
                 $email = EmailEditor::$plugin->emails->getEmailByKey('commerceEmail'.$e->commerceEmail->id);
