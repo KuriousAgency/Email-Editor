@@ -269,34 +269,36 @@ class EmailEditor extends Plugin
 
     private function _registerCommerceEvents()
     {
-        Event::on(
-            CommerceEmails::class, 
-            CommerceEmails::EVENT_BEFORE_SEND_MAIL,
-            function(\craft\commerce\events\MailEvent $e) {
-                //Get the Email Editor Model Associated with the Commerce Email Event
-                $email = EmailEditor::$plugin->emails->getEmailByKey('commerceEmail'.$e->commerceEmail->id);
-
-                if ($email) {  
-                    $toEmailArr = array_keys($e->craftEmail->getTo());
-                    $toEmail = array_pop($toEmailArr);
-                    $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail);
-                    if (!$user) {
-                        $user = [
-                            'email' => $toEmail,
-                            'firstName' => $e->order->billingAddress->firstName ?? explode('@',$toEmail)[0],
-                            'friendlyName' => $e->order->billingAddress->firstName ?? explode('@',$toEmail)[0]
-                        ];
-                    }
-                    $entry = Entry::find()->id($email->id)->orderBy('postDate desc')->one();
-                    if($entry) {
-                        $variables['recipient'] = $user;
-                        $variables['entry'] = $entry;
-                        $variables['order'] = $e->order;
-                        $variables['orderHistory'] = $e->orderHistory;
-                        $e->craftEmail = EmailEditor::$plugin->emails->buildEmail($entry,$e->craftEmail,$email,$variables);
+        if (class_exists('craft\\commerce\\services\\Emails')) {
+            Event::on(
+                CommerceEmails::class, 
+                CommerceEmails::EVENT_BEFORE_SEND_MAIL,
+                function(\craft\commerce\events\MailEvent $e) {
+                    //Get the Email Editor Model Associated with the Commerce Email Event
+                    $email = EmailEditor::$plugin->emails->getEmailByKey('commerceEmail'.$e->commerceEmail->id);
+    
+                    if ($email) {  
+                        $toEmailArr = array_keys($e->craftEmail->getTo());
+                        $toEmail = array_pop($toEmailArr);
+                        $user = Craft::$app->users->getUserByUsernameOrEmail($toEmail);
+                        if (!$user) {
+                            $user = [
+                                'email' => $toEmail,
+                                'firstName' => $e->order->billingAddress->firstName ?? explode('@',$toEmail)[0],
+                                'friendlyName' => $e->order->billingAddress->firstName ?? explode('@',$toEmail)[0]
+                            ];
+                        }
+                        $entry = Entry::find()->id($email->id)->orderBy('postDate desc')->one();
+                        if($entry) {
+                            $variables['recipient'] = $user;
+                            $variables['entry'] = $entry;
+                            $variables['order'] = $e->order;
+                            $variables['orderHistory'] = $e->orderHistory;
+                            $e->craftEmail = EmailEditor::$plugin->emails->buildEmail($entry,$e->craftEmail,$email,$variables);
+                        }
                     }
                 }
-            }
-        );
+            );
+        }
     }
 }
