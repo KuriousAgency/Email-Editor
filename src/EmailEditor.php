@@ -41,7 +41,7 @@ use craft\services\UserPermissions;
 use craft\web\UrlManager;
 use craft\web\twig\variables\CraftVariable;
 
-use craft\commerce\services\Emails;
+use craft\commerce\services\Emails as CommerceEmails;
 
 use yii\base\Event;
 
