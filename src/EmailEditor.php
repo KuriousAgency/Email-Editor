@@ -26,6 +26,7 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterEmailMessagesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\events\TemplateEvent;
 
 use craft\helpers\ElementHelper;
 use craft\helpers\Json;
@@ -39,6 +40,7 @@ use craft\services\SystemMessages;
 use craft\services\UserPermissions;
 
 use craft\web\UrlManager;
+use craft\web\View;
 use craft\web\twig\variables\CraftVariable;
 
 use craft\commerce\services\Emails as CommerceEmails;
@@ -142,6 +144,9 @@ class EmailEditor extends Plugin
                     ],
                     'createEmails' => [
                         'label' => 'Create New Emails'
+                    ],
+                    'testEmails' => [
+                        'label' => 'Test Emails'
                     ]
                 ];
             }
@@ -220,6 +225,21 @@ class EmailEditor extends Plugin
                     $email->testVariables = $testVariables;
                     $this->emails->saveEmail($email);
                     return;
+                }
+            }
+        );
+
+        Event::on(
+            View::class,
+            View::EVENT_BEFORE_RENDER_PAGE_TEMPLATE,
+            function(TemplateEvent $e) {
+                if ($e->templateMode == View::TEMPLATE_MODE_SITE) {
+                    if (array_key_exists('entry',$e->variables) && $e->variables['entry']->sectionId == $this->getSettings()->sectionId && Craft::$app->user->checkPermission('testEmails')) {
+                        // Looks like we are testing an email entry
+                        $email = EmailEditor::$plugin->emails->getEmailById($e->variables['entry']->id);
+                        $e->variables['testVariables'] = Json::decodeIfJson($email->testVariables);
+                        $e->variables['variables']['testVariables'] = Json::decodeIfJson($email->testVariables);
+                    }
                 }
             }
         );
