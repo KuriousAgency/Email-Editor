@@ -235,10 +235,19 @@ class EmailEditor extends Plugin
             function(TemplateEvent $e) {
                 if ($e->templateMode == View::TEMPLATE_MODE_SITE) {
                     if (array_key_exists('entry',$e->variables) && $e->variables['entry']->sectionId == $this->getSettings()->sectionId && Craft::$app->user->checkPermission('testEmails')) {
-                        // Looks like we are testing an email entry
-                        $email = EmailEditor::$plugin->emails->getEmailById($e->variables['entry']->id);
-                        $e->variables['testVariables'] = Json::decodeIfJson($email->testVariables);
-                        $e->variables['variables']['testVariables'] = Json::decodeIfJson($email->testVariables);
+                        // Drafts
+                        $entryId = $e->variables['entry']->id;
+                        if ($entry = Entry::find()->id($entryId)->drafts()->one()) {
+                            $entryId = $entry->sourceId;
+                        }
+                        $email = EmailEditor::$plugin->emails->getEmailById($entryId);
+                        
+                        if ($email && $email->testVariables) {
+                            // Maybe there is twig in there
+                            $rendered = Craft::$app->getView()->renderString($email->testVariables, [], View::TEMPLATE_MODE_SITE);
+                            $e->variables['testVariables'] = Json::decodeIfJson($rendered);
+                            $e->variables['variables']['testVariables'] = $e->variables['testVariables'];
+                        }
                     }
                 }
             }
