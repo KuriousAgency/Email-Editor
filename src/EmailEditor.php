@@ -274,6 +274,7 @@ class EmailEditor extends Plugin
                         $entry = Entry::find()->id($email->id)->orderBy('postDate desc')->one();
                         if($entry) {
                             $variables = $event->message->variables;
+                            $variables['variables'] = $event->message->variables;
                             $variables['recipient'] = $user;
                             $variables['entry'] = $entry;
                             $event->message = EmailEditor::$plugin->emails->buildEmail($entry,$event->message,$email,$variables);
