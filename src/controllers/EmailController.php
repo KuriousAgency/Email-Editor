@@ -33,12 +33,16 @@ class EmailController extends Controller
     {
         $this->requireLogin();
         $user = Craft::$app->getUser()->getIdentity(); 
-        $sent = EmailEditor::$plugin->emails->sendTestEmail($user,$id);
-        if ($sent) {
-            Craft::$app->getSession()->setNotice("Email sent successfully");
+        if (!Craft::$app->getUser()->checkPermission('testEmails')) {
+            Craft::$app->getSession()->setNotice("User does not have sufficient priviledges to send test email.");
         } else {
-            Craft::$app->getSession()->setNotice("Unable to send email");
-        };
+            $sent = EmailEditor::$plugin->emails->sendTestEmail($user,$id);
+            if ($sent) {
+                Craft::$app->getSession()->setNotice("Email sent successfully");
+            } else {
+                Craft::$app->getSession()->setFlash("Unable to send email");
+            };
+        }
         $returnUrl = Entry::find()->id($id)->one()->cpEditUrl;
         return $this->redirect($returnUrl);
     }

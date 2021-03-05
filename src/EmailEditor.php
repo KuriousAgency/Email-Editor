@@ -149,6 +149,9 @@ class EmailEditor extends Plugin
                         'label' => 'Test Emails'
                     ]
                 ];
+                $event->permissions['General']['accessCp']['nested']['accessPlugin-' . $this->id] = [
+                    'label' => Craft::t('app', 'Access {plugin}', ['plugin' => $this->name])
+                ];
             }
         );
     }
